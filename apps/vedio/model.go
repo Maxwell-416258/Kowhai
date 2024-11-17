@@ -11,5 +11,5 @@ type Video struct {
 	SumLike    int        `json:"sumLike"`
 	SumComment int        `json:"sumComment"`
 	Duration   int        `json:"duration"`
-	Audit      base.Audit `json:"audit"`
+	Audit      base.Audit `json:"audit" gorm:"embedded"`
 }

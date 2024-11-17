@@ -9,5 +9,5 @@ type Comment struct {
 	VideoId    string     `json:"video_id"`
 	ReviewerId string     `json:"reviewer_id"`
 	Content    string     `json:"content"`
-	Audit      base.Audit `json:"audit"`
+	Audit      base.Audit `json:"audit" gorm:"embedded"`
 }
