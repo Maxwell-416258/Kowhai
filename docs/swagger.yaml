@@ -1,0 +1,89 @@
+basePath: /v1
+definitions:
+  base.Audit:
+    properties:
+      create_time:
+        type: string
+      update_time:
+        type: string
+    type: object
+  user.User:
+    properties:
+      audit:
+        $ref: '#/definitions/base.Audit'
+      avator:
+        type: string
+      birth:
+        type: string
+      email:
+        type: string
+      followers:
+        type: integer
+      following:
+        type: integer
+      gender:
+        type: string
+      id:
+        type: integer
+      last_login:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      state:
+        type: integer
+    required:
+    - avator
+    - birth
+    - gender
+    - name
+    - password
+    - phone
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API 支持团队
+    url: http://example.com/support
+  description: 这是一个使用 Gin 框架的示例 Swagger 文档。
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://example.com/terms/
+  title: 示例 API 文档
+  version: "1.0"
+paths:
+  /user:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的用户
+      parameters:
+      - description: 用户信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 创建用户
+      tags:
+      - 用户
+swagger: "2.0"

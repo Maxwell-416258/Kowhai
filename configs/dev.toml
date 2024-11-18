@@ -1,6 +1,6 @@
 [mysql]
-host = "119.45.154.194"
+host = "127.0.0.1"
 port = 3306
 user = "root"
-password = "416527"
+password = "xzx527416"
 database = "VidSpark"
