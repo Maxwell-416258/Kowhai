@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/user": {
+        "/user/create": {
             "post": {
                 "description": "创建一个新的用户",
                 "consumes": [
@@ -39,12 +39,65 @@ const docTemplate = `{
                 "summary": "创建用户",
                 "parameters": [
                     {
-                        "description": "用户信息",
-                        "name": "user",
+                        "description": "Name",
+                        "name": "name",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/user.User"
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Gender",
+                        "name": "gender",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Birth",
+                        "name": "birth",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Password",
+                        "name": "password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Email",
+                        "name": "email",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Phone",
+                        "name": "phone",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Avator",
+                        "name": "avator",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
@@ -67,69 +120,79 @@ const docTemplate = `{
                     }
                 }
             }
-        }
-    },
-    "definitions": {
-        "base.Audit": {
-            "type": "object",
-            "properties": {
-                "create_time": {
-                    "type": "string"
-                },
-                "update_time": {
-                    "type": "string"
+        },
+        "/user/getbyname": {
+            "get": {
+                "description": "查询用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "查询用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
                 }
             }
         },
-        "user.User": {
-            "type": "object",
-            "required": [
-                "avator",
-                "birth",
-                "gender",
-                "name",
-                "password",
-                "phone"
-            ],
-            "properties": {
-                "audit": {
-                    "$ref": "#/definitions/base.Audit"
-                },
-                "avator": {
-                    "type": "string"
-                },
-                "birth": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "followers": {
-                    "type": "integer"
-                },
-                "following": {
-                    "type": "integer"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "last_login": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "integer"
+        "/users": {
+            "get": {
+                "description": "查询所有用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "查询所有用户",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
                 }
             }
         }

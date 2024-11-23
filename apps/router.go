@@ -13,7 +13,9 @@ func InitRouter() *gin.Engine {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-		v1.POST("/user", user.CreateUser)
+		v1.POST("/user/create", user.CreateUser)
+		v1.GET("/user/getbyname", user.GetUserByName)
+		v1.GET("/users", user.GetUsers)
 	}
 	return r
 }
