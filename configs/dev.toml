@@ -4,3 +4,9 @@ port = 3306
 user = "root"
 password = "xzx527416"
 database = "VidSpark"
+
+[minio]
+host = "119.45.154.194"
+port = "9000"
+accessKey = "DR0bFu6NBGdYSt3ysqVV"
+secretKey = "54ZK6prWn3nvKu4TXd6TrLJ6xwssS0k03sjFRC36"
