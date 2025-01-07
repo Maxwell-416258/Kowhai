@@ -13,6 +13,7 @@ var (
 
 type Config struct {
 	MySql MySqlConfig `toml:"mysql"`
+	Minio MinioConfig `toml:"minio"`
 }
 
 type MySqlConfig struct {
@@ -21,6 +22,13 @@ type MySqlConfig struct {
 	User     string `toml:"user"`
 	Password string `toml:"password"`
 	Database string `toml:"database"`
+}
+
+type MinioConfig struct {
+	Host      string `toml:"host"`
+	Port      int    `toml:"port"`
+	AccessKey string `toml:"access_key"`
+	SecretKey string `toml:"secret_key"`
 }
 
 func InitConfig() *Config {
