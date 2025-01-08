@@ -90,7 +90,7 @@ func GetUsers(c *gin.Context) {
 // 用户上传视频接口（使用 Gin）
 func UploadVideoHandler(c *gin.Context) {
 	// 限制文件大小，避免上传过大的文件
-	const MaxUploadSize = 10 << 20 // 10MB
+	const MaxUploadSize = 50 << 20 // 10MB
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxUploadSize)
 
 	Id := c.PostForm("userId")
@@ -102,7 +102,7 @@ func UploadVideoHandler(c *gin.Context) {
 	userId, _ := strconv.Atoi(Id)
 
 	// 获取上传的文件
-	file, _, err := c.Request.FormFile("video")
+	file, _, err := c.Request.FormFile("vedio")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": fmt.Sprintf("文件获取失败: %v", err),

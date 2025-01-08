@@ -49,7 +49,11 @@ func InitStorageBuckets() error {
 // 上传视频
 func UploadVideo(userID int, file io.Reader, fileName string) (string, error) {
 	bucketName := VEDIO_BUCKET
-	objectName := fmt.Sprintf("%s/videos/%s", userID, fileName)
+
+	config := configs.InitConfig()
+
+	endpoint := fmt.Sprintf("http://%s:%s", config.Minio.Host, config.Minio.Port)
+	objectName := fmt.Sprintf("%v/videos/%s", userID, fileName)
 
 	_, err := minioClient.PutObject(bucketName, objectName, file, -1, minio.PutObjectOptions{})
 	if err != nil {
@@ -57,5 +61,5 @@ func UploadVideo(userID int, file io.Reader, fileName string) (string, error) {
 	}
 
 	// 返回文件的访问 URL
-	return fmt.Sprintf("https://%s/%s", bucketName, objectName), nil
+	return fmt.Sprintf("%s/%s/%s", endpoint, bucketName, objectName), nil
 }
