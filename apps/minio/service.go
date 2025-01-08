@@ -12,7 +12,7 @@ var minioClient *minio.Client
 
 func InitMinioClient() (err error) {
 	config := configs.InitConfig()
-	minioUrl := fmt.Sprintf("http://%s", config.Minio.Host)
+	minioUrl := config.Minio.Host
 	minioPort := config.Minio.Port
 	minioAccessKey := config.Minio.AccessKey
 	minioSecretKey := config.Minio.SecretKey
