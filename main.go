@@ -2,6 +2,7 @@ package main
 
 import (
 	"vidspark/apps"
+	"vidspark/apps/minio"
 	"vidspark/migrations"
 	"vidspark/tools"
 )
@@ -29,6 +30,10 @@ func main() {
 		db := tools.InitDB()
 		migrations.Migrate(db)
 	}
+
+	//初始化minio相关数据
+	_ = minio.InitMinioClient()
+	_ = minio.InitStorageBuckets()
 
 	// 路由
 	r := apps.InitRouter()

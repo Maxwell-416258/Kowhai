@@ -26,7 +26,7 @@ type MySqlConfig struct {
 
 type MinioConfig struct {
 	Host      string `toml:"host"`
-	Port      int    `toml:"port"`
+	Port      string `toml:"port"`
 	AccessKey string `toml:"access_key"`
 	SecretKey string `toml:"secret_key"`
 }
