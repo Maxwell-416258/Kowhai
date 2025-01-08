@@ -3,6 +3,7 @@ package minio
 import (
 	"fmt"
 	"github.com/minio/minio-go"
+	"io"
 	"log"
 	"vidspark/configs"
 )
@@ -22,4 +23,39 @@ func InitMinioClient() (err error) {
 	}
 	log.Println("minio服务初始化完成!")
 	return nil
+}
+
+func InitStorageBuckets() error {
+	// 初始化存储桶
+	buckets := []string{VEDIO_BUCKET, AVATAR_BUCKET}
+	for _, bucketName := range buckets {
+		exists, err := minioClient.BucketExists(bucketName)
+		if err != nil {
+			return fmt.Errorf("检查存储桶是否存在失败: %w", err)
+		}
+		if !exists {
+			err = minioClient.MakeBucket(bucketName, LOCATION)
+			if err != nil {
+				return fmt.Errorf("创建存储桶 %s 失败: %w", bucketName, err)
+			}
+			log.Printf("存储桶 %s 创建成功！\n", bucketName)
+		} else {
+			log.Printf("存储桶 %s 已存在\n", bucketName)
+		}
+	}
+	return nil
+}
+
+// 上传视频
+func UploadVideo(userID int, file io.Reader, fileName string) (string, error) {
+	bucketName := VEDIO_BUCKET
+	objectName := fmt.Sprintf("%s/videos/%s", userID, fileName)
+
+	_, err := minioClient.PutObject(bucketName, objectName, file, -1, minio.PutObjectOptions{})
+	if err != nil {
+		return "", fmt.Errorf("视频上传失败: %w", err)
+	}
+
+	// 返回文件的访问 URL
+	return fmt.Sprintf("https://%s/%s", bucketName, objectName), nil
 }
