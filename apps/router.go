@@ -12,6 +12,7 @@ import (
 
 func InitRouter() *gin.Engine {
 	r := gin.New()
+	r.Use(gin.Logger()) //启用logger中间件
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
