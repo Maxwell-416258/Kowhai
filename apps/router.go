@@ -29,6 +29,7 @@ func InitRouter() *gin.Engine {
 		v1.GET("/user/getbyname", user.GetUserByName)
 		v1.POST("/user/uploadvedio", user.UploadVideoHandler)
 		v1.GET("/users", user.GetUsers)
+		v1.POST("/user/login", user.Login)
 	}
 	return r
 }
