@@ -7,10 +7,7 @@ import (
 	"strconv"
 	"vidspark/apps/minio"
 	"vidspark/global"
-	"vidspark/tools"
 )
-
-var db = tools.InitDB()
 
 // CreateUser 创建用户
 // @Summary 创建用户
@@ -36,7 +33,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	if err := db.Create(&user).Error; err != nil {
+	if err := global.DB.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		global.Logger.Error("Failed to create user", err.Error())
 		return
@@ -67,7 +64,7 @@ func GetUserByName(c *gin.Context) {
 		global.Logger.Error("Name is required")
 		return
 	}
-	if err := db.First(&user, "name = ?", name).Error; err != nil {
+	if err := global.DB.First(&user, "name = ?", name).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user", "details": err.Error()})
 		global.Logger.Error("Failed to get user", err.Error())
 		return
@@ -88,7 +85,7 @@ func GetUserByName(c *gin.Context) {
 // @Router /users [get]
 func GetUsers(c *gin.Context) {
 	var users []User
-	if err := db.Find(&users).Error; err != nil {
+	if err := global.DB.Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users", "details": err.Error()})
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User retrived successfully", "users": users})

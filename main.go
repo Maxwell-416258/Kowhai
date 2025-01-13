@@ -2,11 +2,8 @@ package main
 
 import (
 	"vidspark/apps"
-	"vidspark/apps/minio"
+	"vidspark/cmd"
 	"vidspark/global"
-	"vidspark/log"
-	"vidspark/migrations"
-	"vidspark/tools"
 )
 
 // @title 示例 API 文档
@@ -24,21 +21,8 @@ import (
 // @host localhost:8080
 // @BasePath /v1
 func main() {
-	// 初始化日志组件
-	global.Logger = log.InitLogger()
 
-	// 通过migrate来控制是否进行数据库migrate
-	var migrate bool
-	migrate = false
-
-	if migrate {
-		db := tools.InitDB()
-		migrations.Migrate(db)
-	}
-
-	//初始化minio相关数据
-	_ = minio.InitMinioClient()
-	_ = minio.InitStorageBuckets()
+	cmd.Start()
 
 	// 路由
 	r := apps.InitRouter()
