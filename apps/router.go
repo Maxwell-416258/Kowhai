@@ -3,11 +3,8 @@ package apps
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
 	"time"
 	"vidspark/apps/user"
-	_ "vidspark/docs"
 )
 
 func InitRouter() *gin.Engine {
@@ -24,7 +21,6 @@ func InitRouter() *gin.Engine {
 
 	v1 := r.Group("/v1")
 	{
-		v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 		v1.POST("/user/create", user.CreateUser)
 		v1.GET("/user/getbyname", user.GetUserByName)
 		v1.POST("/user/uploadvedio", user.UploadVideoHandler)
