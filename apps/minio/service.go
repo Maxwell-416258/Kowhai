@@ -5,18 +5,16 @@ import (
 	"github.com/minio/minio-go"
 	"io"
 	"log"
-	"vidspark/configs"
 	"vidspark/global"
 )
 
 var minioClient *minio.Client
 
 func InitMinioClient() (err error) {
-	config := configs.InitConfig()
-	minioUrl := config.Minio.Host
-	minioPort := config.Minio.Port
-	minioAccessKey := config.Minio.AccessKey
-	minioSecretKey := config.Minio.SecretKey
+	minioUrl := global.Config.Minio.Host
+	minioPort := global.Config.Minio.Port
+	minioAccessKey := global.Config.Minio.AccessKey
+	minioSecretKey := global.Config.Minio.SecretKey
 	minioClient, err = minio.New(fmt.Sprintf("%s:%s", minioUrl, minioPort), minioAccessKey, minioSecretKey, false)
 	if err != nil {
 		global.Logger.Error("minio服务连接失败", err.Error())
@@ -51,9 +49,7 @@ func InitStorageBuckets() error {
 func UploadVideo(userID int, file io.Reader, fileName string) (string, error) {
 	bucketName := VEDIO_BUCKET
 
-	config := configs.InitConfig()
-
-	endpoint := fmt.Sprintf("http://%s:%s", config.Minio.Host, config.Minio.Port)
+	endpoint := fmt.Sprintf("http://%s:%s", global.Config.Minio.Host, global.Config.Minio.Port)
 	objectName := fmt.Sprintf("%v/videos/%s", userID, fileName)
 
 	_, err := minioClient.PutObject(bucketName, objectName, file, -1, minio.PutObjectOptions{})

@@ -1,20 +1,20 @@
-package tools
+package database
 
 import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
-	"vidspark/configs"
+	"vidspark/global"
 )
 
 func InitDB() *gorm.DB {
-	config := configs.InitConfig()
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%v)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		config.MySql.User, config.MySql.Password, config.MySql.Host, config.MySql.Port, config.MySql.Database)
+		global.Config.MySql.User, global.Config.MySql.Password, global.Config.MySql.Host, global.Config.MySql.Port, global.Config.MySql.Database)
+
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("failed to connect database")
+		log.Fatalf("Failed to connect database: %v", err)
 	}
 	return db
 }

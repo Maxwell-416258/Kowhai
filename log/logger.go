@@ -8,14 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"vidspark/configs"
+	"vidspark/global"
 )
-
-var config = configs.InitConfig()
 
 func InitLogger() *zap.SugaredLogger {
 	logMode := zapcore.DebugLevel
-	if config.Log.Develop {
+	if global.Config.Log.Develop {
 		logMode = zapcore.InfoLevel
 	}
 	core := zapcore.NewCore(getEncoder(), getWriteSyncer(), logMode)
@@ -43,10 +41,10 @@ func getWriteSyncer() zapcore.WriteSyncer {
 
 	luberjackSyncer := &lumberjack.Logger{
 		Filename:   stLogFilePath,
-		MaxSize:    config.Log.MaxSize,
-		MaxBackups: config.Log.MaxBackups,
-		MaxAge:     config.Log.MaxAge,
-		Compress:   config.Log.Compress,
+		MaxSize:    global.Config.Log.MaxSize,
+		MaxBackups: global.Config.Log.MaxBackups,
+		MaxAge:     global.Config.Log.MaxAge,
+		Compress:   global.Config.Log.Compress,
 	}
 	return zapcore.AddSync(luberjackSyncer)
 }
