@@ -3,6 +3,8 @@ package main
 import (
 	"vidspark/apps"
 	"vidspark/apps/minio"
+	"vidspark/global"
+	"vidspark/log"
 	"vidspark/migrations"
 	"vidspark/tools"
 )
@@ -22,6 +24,9 @@ import (
 // @host localhost:8080
 // @BasePath /v1
 func main() {
+	// 初始化日志组件
+	global.Logger = log.InitLogger()
+
 	// 通过migrate来控制是否进行数据库migrate
 	var migrate bool
 	migrate = false
@@ -37,6 +42,9 @@ func main() {
 
 	// 路由
 	r := apps.InitRouter()
+
+	global.Logger.Info("Server started at :8081")
+
 	r.Run(":8081")
 
 }

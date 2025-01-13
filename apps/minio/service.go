@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"vidspark/configs"
+	"vidspark/global"
 )
 
 var minioClient *minio.Client
@@ -18,7 +19,7 @@ func InitMinioClient() (err error) {
 	minioSecretKey := config.Minio.SecretKey
 	minioClient, err = minio.New(fmt.Sprintf("%s:%s", minioUrl, minioPort), minioAccessKey, minioSecretKey, false)
 	if err != nil {
-		log.Fatalln("minio服务连接失败", err.Error())
+		global.Logger.Error("minio服务连接失败", err.Error())
 		return
 	}
 	log.Println("minio服务初始化完成!")

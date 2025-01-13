@@ -1,45 +1,52 @@
 package log
 
 import (
+	"fmt"
+	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
+	"path/filepath"
+	"time"
+	"vidspark/configs"
 )
 
-func NewLogger(filePath string) *zap.Logger {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
+var config = configs.InitConfig()
 
-	// Create a write syncer
-	writerSyncer := zapcore.AddSync(file)
-
-	// Define the encoder configuration
-	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:      "time",
-		LevelKey:     "level",
-		MessageKey:   "message",
-		CallerKey:    "caller",
-		EncodeTime:   zapcore.ISO8601TimeEncoder,
-		EncodeLevel:  zapcore.LowercaseLevelEncoder,
-		EncodeCaller: zapcore.ShortCallerEncoder,
+func InitLogger() *zap.SugaredLogger {
+	logMode := zapcore.DebugLevel
+	if config.Log.Develop {
+		logMode = zapcore.InfoLevel
 	}
-	// Create a core with the file write syncer and JSON encoding
-	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
-		writerSyncer,
-		zapcore.InfoLevel, // 最低日志输出级别
-	)
-	return zap.New(core)
+	core := zapcore.NewCore(getEncoder(), getWriteSyncer(), logMode)
+	return zap.New(core).Sugar()
 }
 
-var (
-	SQLLogger    *zap.Logger
-	SystemLogger *zap.Logger
-)
+func getEncoder() zapcore.Encoder {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "time"
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder // 日志级别改大写
+	encoderConfig.EncodeTime = func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(t.Local().Format(time.DateTime)) //time格式化
+	}
+	return zapcore.NewJSONEncoder(encoderConfig)
 
-func InitLoggers() {
-	SQLLogger = NewLogger("sql.log")
-	SystemLogger = NewLogger("system.log")
+}
+
+// 定义日志输出地方
+func getWriteSyncer() zapcore.WriteSyncer {
+	stSeparator := string(filepath.Separator)
+	stRootDir, _ := os.Getwd()
+	stLogFilePath := stRootDir + stSeparator + "log" + stSeparator + "logg" + stSeparator + time.Now().Format(time.DateOnly) + ".log"
+
+	fmt.Println(stLogFilePath)
+
+	luberjackSyncer := &lumberjack.Logger{
+		Filename:   stLogFilePath,
+		MaxSize:    config.Log.MaxSize,
+		MaxBackups: config.Log.MaxBackups,
+		MaxAge:     config.Log.MaxAge,
+		Compress:   config.Log.Compress,
+	}
+	return zapcore.AddSync(luberjackSyncer)
 }
