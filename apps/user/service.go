@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"vidspark/apps/minio"
+	"vidspark/global"
 	"vidspark/tools"
 )
 
@@ -31,11 +32,13 @@ func CreateUser(c *gin.Context) {
 	var user User
 	if err := c.BindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Binding failed", "details": err.Error()})
+		global.Logger.Error("Binding failed", err.Error())
 		return
 	}
 
 	if err := db.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		global.Logger.Error("Failed to create user", err.Error())
 		return
 	}
 
@@ -43,6 +46,7 @@ func CreateUser(c *gin.Context) {
 		"message": "User created successfully",
 		"user":    user,
 	})
+	global.Logger.Info("User created successfully", user)
 }
 
 // GetUserByName 查询用户
@@ -60,13 +64,16 @@ func GetUserByName(c *gin.Context) {
 	name := c.Query("name")
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
+		global.Logger.Error("Name is required")
 		return
 	}
 	if err := db.First(&user, "name = ?", name).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user", "details": err.Error()})
+		global.Logger.Error("Failed to get user", err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User retrived successfully", "user": user})
+	global.Logger.Info("User retrived successfully", user)
 
 }
 

@@ -14,6 +14,7 @@ var (
 type Config struct {
 	MySql MySqlConfig `toml:"mysql"`
 	Minio MinioConfig `toml:"minio"`
+	Log   LogConfig   `toml:"log"`
 }
 
 type MySqlConfig struct {
@@ -29,6 +30,14 @@ type MinioConfig struct {
 	Port      string `toml:"port"`
 	AccessKey string `toml:"access_key"`
 	SecretKey string `toml:"secret_key"`
+}
+
+type LogConfig struct {
+	MaxSize    int  `toml:"max_size"`
+	MaxBackups int  `toml:"max_backups"`
+	MaxAge     int  `toml:"max_age"`
+	Compress   bool `toml:"compress"`
+	Develop    bool `toml:"develop"`
 }
 
 func InitConfig() *Config {
