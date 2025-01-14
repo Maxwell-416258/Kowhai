@@ -3,10 +3,10 @@ package user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"kowhai/apps/minio"
+	"kowhai/global"
 	"net/http"
 	"strconv"
-	"vidspark/apps/minio"
-	"vidspark/global"
 )
 
 // CreateUser 创建用户

@@ -3,8 +3,9 @@ package apps
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"kowhai/apps/user"
+	"kowhai/apps/vedio"
 	"time"
-	"vidspark/apps/user"
 )
 
 func InitRouter() *gin.Engine {
@@ -23,9 +24,11 @@ func InitRouter() *gin.Engine {
 	{
 		v1.POST("/user/create", user.CreateUser)
 		v1.GET("/user/getbyname", user.GetUserByName)
-		v1.POST("/user/uploadvedio", user.UploadVideoHandler)
 		v1.GET("/users", user.GetUsers)
 		v1.POST("/user/login", user.Login)
+	}
+	{
+		v1.POST("/video/upload", vedio.UploadVedio)
 	}
 	return r
 }

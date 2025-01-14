@@ -2,10 +2,10 @@ package migrations
 
 import (
 	"gorm.io/gorm"
+	"kowhai/apps/comment"
+	"kowhai/apps/user"
+	"kowhai/apps/vedio"
 	"log"
-	"vidspark/apps/comment"
-	"vidspark/apps/user"
-	"vidspark/apps/vedio"
 )
 
 // Migrate 数据库迁移，不迁移base的model，后续有别的model迁移需要可以往代码加

@@ -3,7 +3,7 @@ package global
 import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"vidspark/configs"
+	"kowhai/configs"
 )
 
 var Logger *zap.SugaredLogger

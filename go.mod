@@ -1,4 +1,4 @@
-module vidspark
+module kowhai
 
 go 1.22.0
 

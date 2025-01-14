@@ -1,9 +1,9 @@
 package main
 
 import (
-	"vidspark/apps"
-	"vidspark/cmd"
-	"vidspark/global"
+	"kowhai/apps"
+	"kowhai/cmd"
+	"kowhai/global"
 )
 
 // @title 示例 API 文档

@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"vidspark/apps/minio"
-	"vidspark/configs"
-	"vidspark/database"
-	"vidspark/global"
-	"vidspark/log"
-	"vidspark/migrations"
+	"kowhai/apps/minio"
+	"kowhai/configs"
+	"kowhai/database"
+	"kowhai/global"
+	"kowhai/log"
+	"kowhai/migrations"
 )
 
 func Start() {
