@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/minio/minio-go"
 	"io"
+	"kowhai/global"
 	"log"
-	"vidspark/global"
 )
 
 var minioClient *minio.Client

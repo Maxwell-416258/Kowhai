@@ -1,8 +1,8 @@
 package user
 
 import (
+	"kowhai/apps/base"
 	"time"
-	"vidspark/apps/base"
 )
 
 type User struct {

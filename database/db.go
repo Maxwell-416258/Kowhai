@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"kowhai/global"
 	"log"
-	"vidspark/global"
 )
 
 func InitDB() *gorm.DB {

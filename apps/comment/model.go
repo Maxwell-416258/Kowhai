@@ -1,8 +1,8 @@
 package comment
 
 import (
+	"kowhai/apps/base"
 	"time"
-	"vidspark/apps/base"
 )
 
 type Comment struct {

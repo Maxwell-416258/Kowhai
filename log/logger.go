@@ -5,10 +5,10 @@ import (
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"kowhai/global"
 	"os"
 	"path/filepath"
 	"time"
-	"vidspark/global"
 )
 
 func InitLogger() *zap.SugaredLogger {
