@@ -4,7 +4,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"kowhai/apps/user"
-	"kowhai/apps/vedio"
+	"kowhai/apps/video"
 	"time"
 )
 
@@ -28,7 +28,7 @@ func InitRouter() *gin.Engine {
 		v1.POST("/user/login", user.Login)
 	}
 	{
-		v1.POST("/video/upload", vedio.UploadVedio)
+		v1.POST("/video/upload", video.UploadVedio)
 	}
 	return r
 }
