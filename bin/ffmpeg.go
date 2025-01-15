@@ -1,20 +1,26 @@
 package bin
 
 import (
-	"fmt"
 	"io"
-	"io/ioutil"
+	"kowhai/apps/minio"
 	"kowhai/global"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
-func Start(hlsSegmentPattern, hlsM3U8File string, pr *io.PipeReader) error {
+func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeReader) error {
 	useGPU := hasNvidiaGPU()
 	var cmd *exec.Cmd
 
 	// HLS 输出相关配置
-	hlsSegmentTime := "6" // 每个 HLS 片段的时长（秒）
+	hlsSegmentTime := "10" // 每个 HLS 片段的时长（秒）
+
+	tempDir := "/tmp"
+	// TS 和M3U8临时文件路径
+	tsFilePathPattern := filepath.Join(tempDir, ts)
+	m3u8FilePath := filepath.Join(tempDir, m3u8)
 
 	if useGPU {
 		cmd = exec.Command(
@@ -25,8 +31,10 @@ func Start(hlsSegmentPattern, hlsM3U8File string, pr *io.PipeReader) error {
 			"-c:v", "h264_nvenc", // 使用 NVIDIA NVENC 编码器
 			"-preset", "p5", // GPU 编码器预设
 			"-hls_time", hlsSegmentTime, // 每个 HLS 片段的时长
-			"-hls_segment_filename", hlsSegmentPattern, // ts 片段命名规则
-			hlsM3U8File, // 输出 HLS 清单文件
+			"-hls_playlist_type", "vod",
+			"-hls_segment_filename", tsFilePathPattern, // ts 片段命名规则
+			"-hls_base_url", minio_path,
+			m3u8FilePath, // 输出 HLS 清单文件
 		)
 	} else {
 		cmd = exec.Command(
@@ -36,13 +44,17 @@ func Start(hlsSegmentPattern, hlsM3U8File string, pr *io.PipeReader) error {
 			"-c:v", "libx264", // 使用 CPU 编码器
 			"-preset", "medium", // CPU 编码预设
 			"-hls_time", hlsSegmentTime, // 每个 HLS 片段的时长
-			"-hls_segment_filename", hlsSegmentPattern, // ts 片段命名规则
-			hlsM3U8File, // 输出 HLS 清单文件
+			"-hls_playlist_type", "vod",
+			"-hls_segment_filename", tsFilePathPattern, // ts 片段命名规则
+			"-hls_base_url", minio_path,
+			m3u8FilePath, // 输出 HLS 清单文件
 		)
 	}
 
 	cmd.Stdin = pr
+
 	cmd.Stdout = os.Stdout
+
 	cmd.Stderr = os.Stderr
 	// 打印 FFmpeg 命令
 	global.Logger.Info("Start ffmpeg command", "cmd", cmd.String())
@@ -58,34 +70,51 @@ func Start(hlsSegmentPattern, hlsM3U8File string, pr *io.PipeReader) error {
 		global.Logger.Error("Failed to wait ffmpeg command", err)
 		return err
 	}
+
+	// 上传逻辑
+	tsPattern := strings.Replace(ts, "%03d", "*", 1) // 将 %03d 替换为 *，变成 faruxue_*.ts
+	pattern := filepath.Join(tempDir, tsPattern)     // 生成匹配模式
+
+	global.Logger.Info("Glob pattern", "pattern", pattern)
+
+	// 使用 glob 来查找所有匹配的文件
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		global.Logger.Error("Failed to find TS files", err)
+		return err
+	}
+
+	for _, tsFilePath := range matches {
+		tsFileName := filepath.Base(tsFilePath)
+		tsFile, err := os.Open(tsFilePath)
+		if err != nil {
+			global.Logger.Error("Failed to open TS file", err, "file", tsFileName)
+			continue
+		}
+
+		uploadErr := minio.UploadVideo(userId, hlsDir, tsFileName, tsFile)
+		tsFile.Close()
+		if uploadErr != nil {
+			global.Logger.Error("Failed to upload TS file", uploadErr, "file", tsFileName)
+		}
+	}
+
+	// 上传 M3U8 文件
+	go func() {
+		m3u8File, err := os.Open(m3u8FilePath)
+		if err != nil {
+			global.Logger.Error("Failed to open M3U8 file", err)
+			return
+		}
+		defer m3u8File.Close()
+
+		uploadErr := minio.UploadVideo(userId, hlsDir, m3u8, m3u8File)
+		if uploadErr != nil {
+			global.Logger.Error("Failed to upload M3U8 file", uploadErr)
+		}
+	}()
 	return nil
 
-}
-
-// 获取视频时长
-func GetVideoDuration(file io.Reader) (string, error) {
-	// 创建临时文件
-	tmpFile, err := ioutil.TempFile("", "upload_*.mp4")
-	if err != nil {
-		return "", fmt.Errorf("创建临时文件失败: %w", err)
-	}
-	defer tmpFile.Close()
-
-	// 将上传的文件内容写入临时文件
-	if _, err := io.Copy(tmpFile, file); err != nil {
-		return "", fmt.Errorf("写入临时文件失败: %w", err)
-	}
-
-	// 使用 ffprobe 获取视频信息
-	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", tmpFile.Name())
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("执行 ffprobe 失败: %w", err)
-	}
-
-	// 输出的是时长，去除尾部空格并返回
-	duration := string(output)
-	return duration, nil
 }
 
 func hasNvidiaGPU() bool {

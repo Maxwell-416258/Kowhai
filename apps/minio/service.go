@@ -46,17 +46,12 @@ func InitStorageBuckets() error {
 }
 
 // 上传视频
-func UploadVideo(userID int, file io.Reader, fileName string) (string, error) {
+func UploadVideo(userId int, fileDir, fileName string, data io.Reader) error {
 	bucketName := VEDIO_BUCKET
-
-	endpoint := fmt.Sprintf("http://%s:%s", global.Config.Minio.Host, global.Config.Minio.Port)
-	objectName := fmt.Sprintf("%v/videos/%s", userID, fileName)
-
-	_, err := minioClient.PutObject(bucketName, objectName, file, -1, minio.PutObjectOptions{})
+	objectName := fmt.Sprintf("%d/%s/%s", userId, fileDir, fileName)
+	_, err := minioClient.PutObject(bucketName, objectName, data, -1, minio.PutObjectOptions{})
 	if err != nil {
-		return "", fmt.Errorf("视频上传失败: %w", err)
+		return fmt.Errorf("视频上传失败: %w", err)
 	}
-
-	// 返回文件的访问 URL
-	return fmt.Sprintf("%s/%s/%s", endpoint, bucketName, objectName), nil
+	return nil
 }
