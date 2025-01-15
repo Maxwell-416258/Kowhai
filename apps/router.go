@@ -30,6 +30,7 @@ func InitRouter() *gin.Engine {
 	}
 	{
 		v1.POST("/video/upload", video.UploadVedio)
+		v1.GET("/videos", video.GetVideos)
 	}
 	return r
 }

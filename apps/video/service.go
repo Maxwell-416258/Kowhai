@@ -7,6 +7,7 @@ import (
 	"kowhai/apps/minio"
 	"kowhai/bin"
 	"kowhai/global"
+	"math"
 	"net/http"
 	"strconv"
 )
@@ -91,4 +92,32 @@ func UploadVedio(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "video save successful!"})
 	global.Logger.Info("video save successful!")
+}
+
+func GetVideos(c *gin.Context) {
+	var page, pageSize int
+	var total int64
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "15"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 15
+	}
+
+	var videoList []Video
+	offset := (page - 1) * pageSize
+	global.DB.Model(&Video{}).Count(&total)
+	if err := global.DB.Limit(pageSize).Offset(offset).Find(&videoList).Error; err != nil {
+		global.Logger.Error("查询videos失败:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "err"})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":       videoList,
+		"page":       page,
+		"pageSize":   pageSize,
+		"total":      total,
+		"totalPages": int(math.Ceil(float64(total) / float64(pageSize))),
+	})
 }
