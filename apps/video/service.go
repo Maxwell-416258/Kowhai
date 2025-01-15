@@ -64,7 +64,7 @@ func UploadVedio(c *gin.Context) {
 	hlsDir := fmt.Sprintf("%s", videoName)
 	m3u8 := fmt.Sprintf("%s.m3u8", videoName)
 	ts := fmt.Sprintf("%s_%%03d.ts", videoName)
-	minio_path := fmt.Sprintf("http://%s:%s/%s/%v/%s", global.Config.Minio.Host, global.Config.Minio.Port, minio.VEDIO_BUCKET, userId, hlsDir)
+	minio_path := fmt.Sprintf("http://%s:%s/%s/%v/%s/", global.Config.Minio.Host, global.Config.Minio.Port, minio.VEDIO_BUCKET, userId, hlsDir)
 
 	// 使用另一个 goroutine 启动 FFmpeg 命令并上传文件
 	wg.Add(1)
@@ -82,7 +82,7 @@ func UploadVedio(c *gin.Context) {
 	file.Close()
 
 	// 保存视频信息到数据库
-	videoLink := fmt.Sprintf("%s/%s", minio_path, m3u8)
+	videoLink := fmt.Sprintf("%s%s", minio_path, m3u8)
 	video := &Video{Name: videoName, UserId: userId, Duration: videoDuration, Link: videoLink}
 	if err = global.DB.Save(video).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("视频信息保存到数据库失败:%v", err)})
