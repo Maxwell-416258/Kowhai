@@ -24,6 +24,9 @@ func Start() {
 
 	// 通过migrate来控制是否进行数据库migrate
 
+	// 初始化mongo
+	global.Mongo = database.InitMongo()
+
 	if MIGRATE {
 		migrations.Migrate(global.DB)
 	}
