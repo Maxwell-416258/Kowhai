@@ -1,3 +1,3 @@
 package cmd
 
-var MIGRATE = true
+var MIGRATE = false
