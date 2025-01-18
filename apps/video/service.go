@@ -12,12 +12,11 @@ import (
 	"strconv"
 )
 
-//上传视频(包括处理视频)
-
 import (
 	"sync"
 )
 
+// 上传视频(包括处理视频)
 func UploadVedio(c *gin.Context) {
 	// 限制文件大小，避免上传过大的文件
 	const MaxUploadSize = 5000 << 20 // 1000MB
@@ -34,11 +33,19 @@ func UploadVedio(c *gin.Context) {
 
 	userId, _ := strconv.Atoi(Id)
 
-	// 获取上传的文件
+	// 获取上传的视频文件
 	file, _, err := c.Request.FormFile("video")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": fmt.Sprintf("文件获取失败: %v", err),
+			"error": fmt.Sprintf("视频文件获取失败: %v", err),
+		})
+		return
+	}
+	// 获取上传的视频封面
+	image, _, err := c.Request.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("视频封面获取失败: %v", err),
 		})
 		return
 	}
@@ -82,9 +89,20 @@ func UploadVedio(c *gin.Context) {
 	wg.Wait()
 	file.Close()
 
+	// 保存视频封面到minio
+	imageName := fmt.Sprintf("%s.jpg", videoName)
+	err = minio.UploadVideo(userId, hlsDir, imageName, image)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("视频封面保存失败：%v", err)})
+		return
+	}
+
+	// 保存视频封面链接到数据库
+	imageLink := fmt.Sprintf("%s%s", minio_path, imageName)
+
 	// 保存视频信息到数据库
 	videoLink := fmt.Sprintf("%s%s", minio_path, m3u8)
-	video := &Video{Name: videoName, UserId: userId, Duration: videoDuration, Link: videoLink}
+	video := &Video{Name: videoName, UserId: userId, Duration: videoDuration, Link: videoLink, Image: imageLink}
 	if err = global.DB.Save(video).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("视频信息保存到数据库失败:%v", err)})
 		return

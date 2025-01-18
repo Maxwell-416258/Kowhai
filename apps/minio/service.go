@@ -55,3 +55,18 @@ func UploadVideo(userId int, fileDir, fileName string, data io.Reader) error {
 	}
 	return nil
 }
+
+// 上传avatar
+func Uploadavatar(userId int, filename string, data io.Reader) error {
+	bucketName := AVATAR_BUCKET
+	objectName := fmt.Sprintf("%d/%s", userId, filename)
+	_, err := minioClient.PutObject(bucketName, objectName, data, -1, minio.PutObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("avatar上传失败: %w", err)
+	}
+	return nil
+}
+
+func GetAvatarUrl(userId int, filename string) string {
+	return fmt.Sprintf("http://%s:%s/%s/%d/%s", global.Config.Minio.Host, global.Config.Minio.Port, AVATAR_BUCKET, userId, filename)
+}
