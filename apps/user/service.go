@@ -2,26 +2,11 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
+	"kowhai/apps/minio"
 	"kowhai/global"
 	"net/http"
 )
 
-// CreateUser 创建用户
-// @Summary 创建用户
-// @Description 创建一个新的用户
-// @Tags 用户
-// @Accept json
-// @Produce json
-// @Param name body string true "Name"
-// @Param gender body string true "Gender"
-// @Param birth body string true "Birth"
-// @Param password body string true "Password"
-// @Param email body string false "Email"
-// @Param phone body string true "Phone"
-// @Param avator body string true "Avator"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Router /user/create [post]
 func CreateUser(c *gin.Context) {
 	var user User
 	if err := c.BindJSON(&user); err != nil {
@@ -49,16 +34,6 @@ func CreateUser(c *gin.Context) {
 	global.Logger.Info("User created successfully", user)
 }
 
-// GetUserByName 查询用户
-// @Summary 查询用户
-// @Description 查询用户
-// @Tags 用户
-// @Accept json
-// @Produce json
-// @Param name query string true "用户名"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Router /user/getbyname [get]
 func GetUserByName(c *gin.Context) {
 	var user User
 	name := c.Query("name")
@@ -77,15 +52,6 @@ func GetUserByName(c *gin.Context) {
 
 }
 
-// GetUsers 查询所有用户
-// @Summary 查询所有用户
-// @Description 查询所有用户
-// @Tags 用户
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Router /users [get]
 func GetUsers(c *gin.Context) {
 	var users []User
 	if err := global.DB.Find(&users).Error; err != nil {
@@ -116,4 +82,39 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": "password is wrong"})
 		global.Logger.Error("Failed to login", "password is wrong")
 	}
+}
+
+func UploadAvatar(c *gin.Context) {
+	var user User
+	Id := c.PostForm("id")
+	//查询用户name
+	if err := global.DB.First(&user, "id = ?", Id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user", "details": err.Error()})
+		global.Logger.Error("Failed to get user", err.Error())
+		return
+	}
+	avatar, _, err := c.Request.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "avatar must be required"})
+		global.Logger.Error("avatar must be required")
+		return
+	}
+	// 保存到minio
+	avatar_name := user.Name + ".png"
+	err = minio.Uploadavatar(user.Id, avatar_name, avatar)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload avatar", "details": err.Error()})
+		global.Logger.Error("Failed to upload avatar", err.Error())
+		return
+	}
+	// 构造头像链接
+	avatar_url := minio.GetAvatarUrl(user.Id, avatar_name)
+	user.Avatar = avatar_url
+	// 更新用户头像链接
+	if err = global.DB.Model(&User{}).Where("id = ?", user.Id).Update("avatar", avatar_url).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user", "details": err.Error()})
+		global.Logger.Error("Failed to update user", err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Avatar uploaded successfully", "user": user})
 }
