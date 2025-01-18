@@ -23,10 +23,8 @@ func Start() {
 	global.DB = database.InitDB()
 
 	// 通过migrate来控制是否进行数据库migrate
-	var migrate bool
-	migrate = false
 
-	if migrate {
+	if MIGRATE {
 		migrations.Migrate(global.DB)
 	}
 
