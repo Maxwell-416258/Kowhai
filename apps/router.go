@@ -3,6 +3,7 @@ package apps
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"kowhai/apps/comment"
 	"kowhai/apps/user"
 	"kowhai/apps/video"
 	"time"
@@ -29,9 +30,14 @@ func InitRouter() *gin.Engine {
 		v1.POST("/user/login", user.Login)
 		v1.PATCH("/user/avatar", user.UploadAvatar)
 	}
+
 	{
 		v1.POST("/video/upload", video.UploadVedio)
 		v1.GET("/videos", video.GetVideos)
+	}
+
+	{
+		v1.POST("/comment/add", comment.AddComment)
 	}
 	return r
 }

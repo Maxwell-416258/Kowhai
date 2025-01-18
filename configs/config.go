@@ -13,11 +13,20 @@ var (
 
 type Config struct {
 	MySql MySqlConfig `toml:"mysql"`
+	Mongo MongoConfig `toml:"mongo"`
 	Minio MinioConfig `toml:"minio"`
 	Log   LogConfig   `toml:"log"`
 }
 
 type MySqlConfig struct {
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	User     string `toml:"user"`
+	Password string `toml:"password"`
+	Database string `toml:"database"`
+}
+
+type MongoConfig struct {
 	Host     string `toml:"host"`
 	Port     int    `toml:"port"`
 	User     string `toml:"user"`
