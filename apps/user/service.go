@@ -2,6 +2,7 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
+	"kowhai/apps/middleware"
 	"kowhai/apps/minio"
 	"kowhai/global"
 	"net/http"
@@ -75,13 +76,17 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users", "details": err.Error()})
 		global.Logger.Error("Failed to get user", err.Error())
 	}
-	if user.Password == loginData.Password {
-		c.JSON(http.StatusOK, gin.H{"message": "Login successfully", "user": user})
-		global.Logger.Info("Login successfully", user)
-	} else {
+	if user.Password != loginData.Password {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": "password is wrong"})
 		global.Logger.Error("Failed to login", "password is wrong")
 	}
+	token, err := middleware.CreateToken(loginData.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": err.Error()})
+		global.Logger.Error("Failed to login", err.Error())
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Login successfully", "token": token, "user": user})
+	global.Logger.Info("Login successfully", user)
 }
 
 func UploadAvatar(c *gin.Context) {
