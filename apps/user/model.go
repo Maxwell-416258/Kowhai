@@ -16,7 +16,7 @@ type User struct {
 	Followers int        `json:"followers" gorm:"column:num_followers;default:0;comment:关注你的"`
 	Following int        `json:"following" gorm:"column:following_count;default:0;comment:你关注的"`
 	LastLogin time.Time  `json:"last_login" gorm:"default:null;comment:最后一次登录的时间"`
-	Avatar    string     `json:"avatar" binding:"required" gorm:"comment:头像链接"`
+	Avatar    string     `json:"avatar" gorm:"default:null;comment:头像链接"`
 	State     int        `json:"state" gorm:"default:0;comment:状态"`
 	Audit     base.Audit `json:"audit" gorm:"embedded"`
 }
