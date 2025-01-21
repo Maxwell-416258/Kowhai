@@ -23,13 +23,13 @@ func InitRouter() *gin.Engine {
 		MaxAge:           12 * time.Hour,                                                         // 缓存预检请求的结果
 	}))
 	r.POST("/user/login", user.Login)
-
+	r.POST("/user/create", user.CreateUser)
 	v1 := r.Group("/v1")
 	v1.Use(middleware.JWTMiddleware())
 
 	//user
 	{
-		v1.POST("/user/create", user.CreateUser)
+
 		v1.GET("/user/getbyname", user.GetUserByName)
 		v1.GET("/users", user.GetUsers)
 		v1.PATCH("/user/avatar", user.UploadAvatar)
