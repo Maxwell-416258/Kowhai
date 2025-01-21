@@ -3,6 +3,7 @@ package video
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"io"
 	"kowhai/apps/minio"
 	"kowhai/bin"
@@ -138,4 +139,30 @@ func GetVideos(c *gin.Context) {
 		"total":      total,
 		"totalPages": int(math.Ceil(float64(total) / float64(pageSize))),
 	})
+}
+
+func GetSumLikes(c *gin.Context) {
+	var sum int64
+	video_id := c.Query("video_id")
+	if video_id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "video_id 参数不能为空"})
+		return
+	}
+	if err := global.DB.Model(&Video{}).Where("id = ?", video_id).Select("sumLike").Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "点赞数查询失败"})
+	}
+	c.JSON(http.StatusOK, gin.H{"sumLike": sum})
+}
+
+func AddLikes(c *gin.Context) {
+	video_id, err := strconv.Atoi(c.PostForm("video_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	if err := global.DB.Model(&Video{}).Where("id = ?", video_id).Update("sum_like", gorm.Expr("sum_like + ?", 1)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "点赞成功"})
 }

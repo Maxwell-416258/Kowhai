@@ -27,6 +27,7 @@ func InitRouter() *gin.Engine {
 	v1 := r.Group("/v1")
 	v1.Use(middleware.JWTMiddleware())
 
+	//user
 	{
 		v1.POST("/user/create", user.CreateUser)
 		v1.GET("/user/getbyname", user.GetUserByName)
@@ -34,11 +35,15 @@ func InitRouter() *gin.Engine {
 		v1.PATCH("/user/avatar", user.UploadAvatar)
 	}
 
+	//video
 	{
 		v1.POST("/video/upload", video.UploadVedio)
 		v1.GET("/videos", video.GetVideos)
+		v1.GET("/video/like", video.GetSumLikes)
+		v1.PATCH("video/like", video.AddLikes)
 	}
 
+	//comment
 	{
 		v1.POST("/comment/add", comment.AddComment)
 	}
