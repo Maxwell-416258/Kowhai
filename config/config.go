@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"github.com/BurntSushi/toml"
@@ -53,7 +53,7 @@ func InitConfig() *Config {
 	once.Do(func() {
 		log.Println("Loading configuration...")
 		var config Config
-		if _, err := toml.DecodeFile("configs/dev.toml", &config); err != nil {
+		if _, err := toml.DecodeFile("config/dev.toml", &config); err != nil {
 			log.Fatalf("Failed to load configuration: %v", err)
 		}
 		config_instance = &config

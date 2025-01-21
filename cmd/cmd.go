@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"kowhai/apps/minio"
-	"kowhai/configs"
+	"kowhai/config"
 	"kowhai/database"
 	"kowhai/global"
 	"kowhai/log"
-	"kowhai/migrations"
+	"kowhai/migration"
 )
 
 func Start() {
 
 	//初始化配置
 	if global.Config == nil {
-		global.Config = configs.InitConfig()
+		global.Config = config.InitConfig()
 	}
 
 	// 初始化日志组件
@@ -28,7 +28,7 @@ func Start() {
 	global.Mongo = database.InitMongo()
 
 	if MIGRATE {
-		migrations.Migrate(global.DB)
+		migration.Migrate(global.DB)
 	}
 
 	//初始化minio相关数据

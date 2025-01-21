@@ -4,12 +4,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"kowhai/configs"
+	"kowhai/config"
 )
 
 var Logger *zap.SugaredLogger
 
-var Config *configs.Config
+var Config *config.Config
 
 var DB *gorm.DB
 
