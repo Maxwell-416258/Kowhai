@@ -67,23 +67,26 @@ func Login(c *gin.Context) {
 		Name     string `json:"user_name" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&loginData); err != nil {
+	if err := c.BindJSON(&loginData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Binding failed", "details": err.Error()})
 		global.Logger.Error("Binding failed", err.Error())
 		return
 	}
-	if err := global.DB.Where("name = ?", loginData.Name).First(&user).Error; err != nil {
+	if err := global.DB.Where("user_name = ?", loginData.Name).First(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users", "details": err.Error()})
 		global.Logger.Error("Failed to get user", err.Error())
+		return
 	}
 	if user.Password != loginData.Password {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": "password is wrong"})
 		global.Logger.Error("Failed to login", "password is wrong")
+		return
 	}
 	token, err := middleware.CreateToken(loginData.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": err.Error()})
 		global.Logger.Error("Failed to login", err.Error())
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Login successfully", "token": token, "user": user})
 	global.Logger.Info("Login successfully", user)
