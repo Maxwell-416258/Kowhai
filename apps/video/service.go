@@ -125,12 +125,21 @@ func GetVideos(c *gin.Context) {
 		pageSize = 15
 	}
 
-	var videoList []Video
+	var videoList []struct {
+		Video
+		Name   string `json:"name"`
+		Avatar string `json:"avatar"`
+	}
 	offset := (page - 1) * pageSize
-	global.DB.Model(&Video{}).Count(&total)
-	if err := global.DB.Limit(pageSize).Offset(offset).Find(&videoList).Error; err != nil {
-		global.Logger.Error("查询videos失败:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "err"})
+	if err := global.DB.Model(&Video{}).
+		Select("videos.*, users.name, users.avatar").
+		Joins("left join users on videos.user_id = users.id").
+		Count(&total).
+		Limit(pageSize).Offset(offset).
+		Find(&videoList).Error; err != nil {
+		global.Logger.Error("Failed to get videos", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取视频列表失败"})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data":       videoList,
