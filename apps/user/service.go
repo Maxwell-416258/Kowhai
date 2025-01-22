@@ -64,7 +64,7 @@ func GetUsers(c *gin.Context) {
 func Login(c *gin.Context) {
 	var user User
 	var loginData struct {
-		Name     string `json:"name" binding:"required"`
+		Name     string `json:"user_name" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&loginData); err != nil {
