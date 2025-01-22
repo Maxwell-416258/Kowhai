@@ -127,12 +127,12 @@ func GetVideos(c *gin.Context) {
 
 	var videoList []struct {
 		Video
-		Name   string `json:"name"`
-		Avatar string `json:"avatar"`
+		UserName string `json:"user_name"`
+		Avatar   string `json:"avatar"`
 	}
 	offset := (page - 1) * pageSize
 	if err := global.DB.Model(&Video{}).
-		Select("videos.*, users.name, users.avatar").
+		Select("videos.*, users.user_name, users.avatar").
 		Joins("left join users on videos.user_id = users.id").
 		Count(&total).
 		Limit(pageSize).Offset(offset).

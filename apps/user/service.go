@@ -16,7 +16,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	if err := global.DB.Where("name = ?", user.Name).First(&user).Error; err == nil {
+	if err := global.DB.Where("name = ?", user.UserName).First(&user).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
 		global.Logger.Error("User already exists")
 		return
@@ -105,7 +105,7 @@ func UploadAvatar(c *gin.Context) {
 		return
 	}
 	// 保存到minio
-	avatar_name := user.Name + ".png"
+	avatar_name := user.UserName + ".png"
 	err = minio.Uploadavatar(user.Id, avatar_name, avatar)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload avatar", "details": err.Error()})

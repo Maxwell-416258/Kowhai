@@ -7,7 +7,7 @@ import (
 
 type User struct {
 	Id        int        `json:"id" gorm:"PrimaryKey;autoIncrement;comment:用户id"`
-	Name      string     `json:"name" binding:"required" gorm:"comment:用户名"`
+	UserName  string     `json:"user_name" binding:"required" gorm:"comment:用户名"`
 	Gender    string     `json:"gender" binding:"required" gorm:"comment:性别"`
 	Birth     string     `json:"birth" binding:"required" gorm:"comment:出生日期"`
 	Password  string     `json:"password" binding:"required" gorm:"comment:密码"`
