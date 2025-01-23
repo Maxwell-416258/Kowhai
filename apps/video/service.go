@@ -175,3 +175,20 @@ func AddLikes(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "点赞成功"})
 }
+
+// 模糊搜索
+func GetVideoByName(c *gin.Context) {
+	video_name := c.Query("name")
+	if video_name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name 参数不能为空"})
+		global.Logger.Error("name 参数不能为空")
+		return
+	}
+	var video_list *[]Video
+	if err := global.DB.Where("name like ?", "%"+video_name+"%").Find(&video_list).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "视频搜索失败"})
+		global.Logger.Error("视频搜索失败")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": video_list})
+}
