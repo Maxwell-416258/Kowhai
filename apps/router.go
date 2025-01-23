@@ -47,6 +47,8 @@ func InitRouter() *gin.Engine {
 	//comment
 	{
 		v1.POST("/comment/add", comment.AddComment)
+		v1.GET("/comment/total", comment.GetCommentTotal)
+		v1.GET("/comment/list", comment.GetCommentList)
 	}
 	return r
 }
