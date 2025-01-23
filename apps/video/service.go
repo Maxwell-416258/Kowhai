@@ -113,6 +113,7 @@ func UploadVedio(c *gin.Context) {
 	global.Logger.Info("video save successful!")
 }
 
+// 获取视频列表
 func GetVideos(c *gin.Context) {
 	var page, pageSize int
 	var total int64
@@ -150,6 +151,7 @@ func GetVideos(c *gin.Context) {
 	})
 }
 
+// 获取视频点赞数
 func GetSumLikes(c *gin.Context) {
 	var sum int64
 	video_id := c.Query("video_id")
@@ -163,6 +165,7 @@ func GetSumLikes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"sumLike": sum})
 }
 
+// 添加点赞
 func AddLikes(c *gin.Context) {
 	video_id, err := strconv.Atoi(c.PostForm("video_id"))
 	if err != nil {
