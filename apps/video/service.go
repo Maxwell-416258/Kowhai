@@ -152,6 +152,56 @@ func GetVideos(c *gin.Context) {
 	})
 }
 
+// 获取特定标签类型的视频
+func GetVideosByLabel(c *gin.Context) {
+	var page, pageSize int
+	var total int64
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "15"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 15
+	}
+
+	label := c.Query("label")
+	if label == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "label字段不能为空"})
+		return
+	}
+	label_int, err := strconv.Atoi(label)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "label必须为数字"})
+		return
+	}
+
+	var videoList []struct {
+		Video
+		UserName string `json:"user_name"`
+		Avatar   string `json:"avatar"`
+	}
+	offset := (page - 1) * pageSize
+	if err := global.DB.Model(&Video{}).
+		Where("label = ?", label_int).
+		Select("videos.*, users.user_name, users.avatar").
+		Joins("left join users on videos.user_id = users.id").
+		Count(&total).
+		Limit(pageSize).Offset(offset).
+		Find(&videoList).Error; err != nil {
+		global.Logger.Error("Failed to get videos", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取视频列表失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":       videoList,
+		"page":       page,
+		"pageSize":   pageSize,
+		"total":      total,
+		"totalPages": int(math.Ceil(float64(total) / float64(pageSize))),
+	})
+}
+
 // 获取视频点赞数
 func GetSumLikes(c *gin.Context) {
 	var sum int64
