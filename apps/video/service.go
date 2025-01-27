@@ -1,20 +1,21 @@
 package video
 
 import (
+	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"github.com/go-sql-driver/mysql"
 	"io"
 	"kowhai/apps/minio"
+	"kowhai/apps/user"
 	"kowhai/bin"
 	"kowhai/global"
 	"math"
 	"net/http"
 	"strconv"
-)
-
-import (
 	"sync"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // 上传视频(包括处理视频)
@@ -194,4 +195,72 @@ func GetVideoByName(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": video_list})
+}
+
+// 查询用户订阅的用户名和头像
+func GetSubscribe(c *gin.Context) {
+	user_id, err := strconv.Atoi(c.Query("user_id"))
+	if err != nil {
+		global.Logger.Error("user_id error,err:", err)
+		return
+	}
+	var subscribes []Subscribe
+	err = global.DB.Model(Subscribe{}).Where("user_id = ?", user_id).Find(&subscribes).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"data": "查询失败"})
+		global.Logger.Error("订阅数据查询失败", err)
+		return
+	}
+	var subscibeIds []int
+	for _, subscribe := range subscribes {
+		subscibeIds = append(subscibeIds, subscribe.Id)
+	}
+
+	var userInfo []map[string]interface{}
+	//查询userName和Avatar
+	err = global.DB.Model(&user.User{}).Select("user_name,avatar").Where("id IN ?", subscibeIds).Find(&userInfo).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "用户名和头像获取失败"})
+		global.Logger.Error("用户名和头像获取失败", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": userInfo})
+}
+
+// 添加订阅
+func CreateSubscribe(c *gin.Context) {
+	var subscribe Subscribe
+	err := c.BindJSON(&subscribe)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"data": "绑定失败", "error": err})
+		return
+	}
+	subscribe_id := subscribe.SubscribeId
+	err = global.DB.Where("id = ?", subscribe_id).First(&user.User{}).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"data": "订阅者id不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"data": "数据库查询失败", "error": err})
+		return
+	}
+
+	if err = global.DB.Create(&subscribe).Error; err != nil {
+		// 检查是否是唯一约束错误
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			// 错误 1062：Duplicate entry
+			c.JSON(http.StatusBadRequest, gin.H{"data": "已经订阅该用户，不能重复订阅"})
+			return
+		}
+
+		// 其他错误
+		global.Logger.Error("订阅失败 ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"data": "订阅失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "订阅成功", "data": subscribe})
 }
