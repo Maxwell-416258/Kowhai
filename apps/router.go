@@ -1,13 +1,14 @@
 package apps
 
 import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"kowhai/apps/comment"
 	"kowhai/apps/middleware"
 	"kowhai/apps/user"
 	"kowhai/apps/video"
 	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func InitRouter() *gin.Engine {
@@ -50,5 +51,11 @@ func InitRouter() *gin.Engine {
 		v1.GET("/comment/total", comment.GetCommentTotal)
 		v1.GET("/comment/list", comment.GetCommentList)
 	}
+	//subscirbe
+	{
+		v1.GET("/subscribe", video.GetSubscribe)
+		v1.POST("/subscribe", video.CreateSubscribe)
+	}
+
 	return r
 }
