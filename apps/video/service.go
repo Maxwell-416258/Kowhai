@@ -31,6 +31,27 @@ func UploadVedio(c *gin.Context) {
 		return
 	}
 
+	// label
+	labelStr := c.PostForm("label")
+	if labelStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "label字段不能为空"})
+		return
+	}
+
+	// 将字符串转为整数
+	labelInt, err := strconv.Atoi(labelStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "label必须为数字"})
+		return
+	}
+
+	// 转换为 VideoType 类型并验证
+	label := VideoType(labelInt)
+	if label < TypeMusic || label > TypeOther {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "label值不在有效范围内"})
+		return
+	}
+
 	videoDuration := c.PostForm("videoDuration")
 
 	userId, _ := strconv.Atoi(Id)
@@ -104,7 +125,7 @@ func UploadVedio(c *gin.Context) {
 
 	// 保存视频信息到数据库
 	videoLink := fmt.Sprintf("%s%s", minio_path, m3u8)
-	video := &Video{Name: videoName, UserId: userId, Duration: videoDuration, Link: videoLink, Image: imageLink}
+	video := &Video{Name: videoName, UserId: userId, Duration: videoDuration, Link: videoLink, Image: imageLink, Label: label}
 	if err = global.DB.Save(video).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("视频信息保存到数据库失败:%v", err)})
 		return
