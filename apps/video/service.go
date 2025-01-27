@@ -119,12 +119,12 @@ func GetVideos(c *gin.Context) {
 	var page, pageSize int
 	var total int64
 	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "15"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "25"))
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 {
-		pageSize = 15
+		pageSize = 25
 	}
 
 	var videoList []struct {
@@ -157,12 +157,12 @@ func GetVideosByLabel(c *gin.Context) {
 	var page, pageSize int
 	var total int64
 	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "15"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "25"))
 	if page < 1 {
 		page = 1
 	}
 	if pageSize < 1 {
-		pageSize = 15
+		pageSize = 25
 	}
 
 	label := c.Query("label")
