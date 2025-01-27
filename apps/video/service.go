@@ -188,7 +188,7 @@ func GetVideoByName(c *gin.Context) {
 		return
 	}
 	var video_list *[]Video
-	if err := global.DB.Where("name like ?", "%"+video_name+"%").Find(&video_list).Error; err != nil {
+	if err := global.DB.Where("name like ?", "%"+video_name+"%").Order("create_time DESC").Find(&video_list).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "视频搜索失败"})
 		global.Logger.Error("视频搜索失败")
 		return
