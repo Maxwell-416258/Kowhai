@@ -18,17 +18,17 @@ func AddComment(c *gin.Context) {
 
 	var comment Comment
 	if err := c.BindJSON(&comment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "添加失败", "err": err.Error()})
 		return
 	}
 
 	insertResult, err := comment_collection.InsertOne(context.Background(), comment)
 	if err != nil {
 		global.Logger.Error("插入评论失败", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "添加失败", "err": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": insertResult.InsertedID})
+	c.JSON(http.StatusOK, gin.H{"msg": "添加成功", "data": insertResult.InsertedID})
 
 }
 
@@ -40,7 +40,7 @@ func GetCommentTotal(c *gin.Context) {
 
 	var video_id = c.Query("video_id")
 	if video_id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "video_id不能为空"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "video_id不能为空", "err": ""})
 		return
 	}
 
@@ -48,10 +48,10 @@ func GetCommentTotal(c *gin.Context) {
 	total, err := comment_collection.CountDocuments(context.Background(), bson.M{"video_id": video_id})
 	if err != nil {
 		global.Logger.Error("获取评论总数失败", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "获取评论失败", "err": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": total})
+	c.JSON(http.StatusOK, gin.H{"msg": "获取评论成功", "data": total})
 }
 
 // 获取评论列表
@@ -64,7 +64,7 @@ func GetCommentList(c *gin.Context) {
 
 	var video_id = c.Query("video_id")
 	if video_id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "video_id不能为空"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "video_id不能为空", "err": ""})
 		return
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -88,21 +88,25 @@ func GetCommentList(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "无法获取评论列表"})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "无法获取评论列表", "err": ""})
 		return
 	}
 	defer cursor.Close(c)
 
 	// 解析查询结果
 	if err := cursor.All(c, &CommentList); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "无法解析评论数据"})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "无法解析评论数据", "err": ""})
 		return
 	}
 	// 返回结果
-	c.JSON(http.StatusOK, gin.H{
+	data := map[string]interface{}{
 		"page":     page,
 		"pageSize": pageSize,
 		"total":    len(CommentList),
 		"comments": CommentList,
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg":  "获取评论成功",
+		"data": data,
 	})
 }

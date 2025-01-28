@@ -11,26 +11,26 @@ import (
 func CreateUser(c *gin.Context) {
 	var user User
 	if err := c.BindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Binding failed", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Binding failed", "err": err.Error()})
 		global.Logger.Error("Binding failed", err.Error())
 		return
 	}
 
 	if err := global.DB.Where("name = ?", user.UserName).First(&user).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "User already exists", "err": ""})
 		global.Logger.Error("User already exists")
 		return
 	}
 
 	if err := global.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to create user", "err": ""})
 		global.Logger.Error("Failed to create user", err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "User created successfully",
-		"user":    user,
+		"msg":  "User created successfully",
+		"data": user,
 	})
 	global.Logger.Info("User created successfully", user)
 }
@@ -39,16 +39,16 @@ func GetUserByName(c *gin.Context) {
 	var user User
 	name := c.Query("name")
 	if name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Name is required", "err": ""})
 		global.Logger.Error("Name is required")
 		return
 	}
 	if err := global.DB.First(&user, "name = ?", name).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to get user", "err": err.Error()})
 		global.Logger.Error("Failed to get user", err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User retrived successfully", "user": user})
+	c.JSON(http.StatusOK, gin.H{"msg": "User retrived successfully", "data": user})
 	global.Logger.Info("User retrived successfully", user)
 
 }
@@ -56,9 +56,9 @@ func GetUserByName(c *gin.Context) {
 func GetUsers(c *gin.Context) {
 	var users []User
 	if err := global.DB.Find(&users).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to get users", "err": err.Error()})
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User retrived successfully", "users": users})
+	c.JSON(http.StatusOK, gin.H{"msg": "User retrived successfully", "data": users})
 }
 
 func Login(c *gin.Context) {
@@ -68,27 +68,32 @@ func Login(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 	if err := c.BindJSON(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Binding failed", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Binding failed", "err": err.Error()})
 		global.Logger.Error("Binding failed", err.Error())
 		return
 	}
 	if err := global.DB.Where("user_name = ?", loginData.Name).First(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to get users", "err": err.Error()})
 		global.Logger.Error("Failed to get user", err.Error())
 		return
 	}
 	if user.Password != loginData.Password {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": "password is wrong"})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to login", "err": "password is wrong"})
 		global.Logger.Error("Failed to login", "password is wrong")
 		return
 	}
 	token, err := middleware.CreateToken(loginData.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to login", "err": err.Error()})
 		global.Logger.Error("Failed to login", err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Login successfully", "token": token, "user": user})
+
+	data := map[string]interface{}{
+		"token": token,
+		"user":  user,
+	}
+	c.JSON(http.StatusOK, gin.H{"msg": "Login successfully", "data": data})
 	global.Logger.Info("Login successfully", user)
 }
 
@@ -97,13 +102,13 @@ func UploadAvatar(c *gin.Context) {
 	Id := c.PostForm("id")
 	//查询用户name
 	if err := global.DB.First(&user, "id = ?", Id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to get user", "err": err.Error()})
 		global.Logger.Error("Failed to get user", err.Error())
 		return
 	}
 	avatar, _, err := c.Request.FormFile("avatar")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "avatar must be required"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "avatar must be required", "err": ""})
 		global.Logger.Error("avatar must be required")
 		return
 	}
@@ -111,7 +116,7 @@ func UploadAvatar(c *gin.Context) {
 	avatar_name := user.UserName + ".png"
 	err = minio.Uploadavatar(user.Id, avatar_name, avatar)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload avatar", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to upload avatar", "err": err.Error()})
 		global.Logger.Error("Failed to upload avatar", err.Error())
 		return
 	}
@@ -120,9 +125,9 @@ func UploadAvatar(c *gin.Context) {
 	user.Avatar = avatar_url
 	// 更新用户头像链接
 	if err = global.DB.Model(&User{}).Where("id = ?", user.Id).Update("avatar", avatar_url).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Failed to update user", "err": err.Error()})
 		global.Logger.Error("Failed to update user", err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Avatar uploaded successfully", "user": user})
+	c.JSON(http.StatusOK, gin.H{"msg": "Avatar uploaded successfully", "data": user})
 }
