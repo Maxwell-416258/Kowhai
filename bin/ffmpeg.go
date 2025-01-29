@@ -25,24 +25,23 @@ func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeRe
 	if useGPU {
 		cmd = exec.Command(
 			"bin/ffmpeg",
-			"-y",               // 覆盖输出文件
-			"-hwaccel", "cuda", // 启用 GPU 硬件加速
-			"-hwaccel_output_format", "cuda", // 让解码后数据留在 GPU，减少 CPU 传输
-
-			"-c:v", "h264_cuvid",
-
-			"-i", "pipe:0", // 输入文件
-
-			"-c:v", "h264_nvenc", // 硬件编码为 H.264（适用于 HLS）
-			"-preset", "p5", // NVENC 编码预设
-
+			"-y",
+			"-hwaccel", "cuda",
+			"-hwaccel_output_format", "cuda",
+			"-i", "pipe:0",
+			"-c:v", "h264_nvenc",
+			"-preset", "p4", // 更快的编码速度
+			"-bf", "0", // 关闭 B 帧
+			"-coder", "0", // 关闭 CABAC
+			"-g", "50", // 缩短 GOP 长度
+			"-vsync", "0",
 			"-hls_time", hlsSegmentTime,
 			"-hls_playlist_type", "vod",
 			"-hls_segment_filename", tsFilePathPattern,
 			"-hls_base_url", minio_path,
-
 			m3u8FilePath,
 		)
+
 	} else {
 		cmd = exec.Command(
 			"bin/ffmpeg",
