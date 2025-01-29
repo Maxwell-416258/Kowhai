@@ -30,8 +30,6 @@ func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeRe
 			"-hwaccel_output_format", "cuda", // 让解码后数据留在 GPU，减少 CPU 传输
 
 			"-c:v", "h264_cuvid",
-			"-c:v", "hevc_cuvid",
-			"-c:v", "av1_cuvid",
 
 			"-i", "pipe:0", // 输入文件
 
