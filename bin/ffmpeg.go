@@ -31,9 +31,7 @@ func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeRe
 			"-i", "pipe:0",
 			"-c:v", "h264_nvenc",
 			"-preset", "p4", // 更快的编码速度
-			"-bf", "0", // 关闭 B 帧
 			"-coder", "0", // 关闭 CABAC
-			"-g", "50", // 缩短 GOP 长度
 			"-vsync", "0",
 			"-hls_time", hlsSegmentTime,
 			"-hls_playlist_type", "vod",
