@@ -52,8 +52,6 @@ func UploadVedio(c *gin.Context) {
 		return
 	}
 
-	videoDuration := c.PostForm("videoDuration")
-
 	userId, _ := strconv.Atoi(Id)
 
 	// 获取上传的视频文件
@@ -127,7 +125,7 @@ func UploadVedio(c *gin.Context) {
 
 	// 保存视频信息到数据库
 	videoLink := fmt.Sprintf("%s%s", minio_path, m3u8)
-	video := &Video{Name: videoName, UserId: userId, Duration: videoDuration, Link: videoLink, Image: imageLink, Label: label}
+	video := &Video{Name: videoName, UserId: userId, Link: videoLink, Image: imageLink, Label: label}
 	if err = global.DB.Save(video).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频信息保存到数据库失败", "err": err})
 		return
