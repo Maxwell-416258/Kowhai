@@ -25,7 +25,6 @@ type Video struct {
 	Link       string     `json:"link" gorm:"comment:视频链接"`
 	SumLike    int        `json:"sumLike" gorm:"default:0;comment:点赞数"`
 	SumComment int        `json:"sumComment" gorm:"default:0;comment:评论数"`
-	Duration   string     `json:"duration" gorm:"comment:视频时长"`
 	Label      VideoType  `json:":label" gorm:"type:int;default:8;comment:视频类型"`
 	Audit      base.Audit `json:"audit" gorm:"embedded"`
 }
