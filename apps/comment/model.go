@@ -7,8 +7,9 @@ import (
 
 type Comment struct {
 	Id         primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	VideoId    string             `json:"video_id" bson:"video_id"`
-	ReviewerId string             `json:"reviewer_id" bson:"reviewer_id"`
+	VideoId    string             `json:"videoId" bson:"video_id"`
+	ReviewerId string             `json:"reviewerId" bson:"reviewer_id"`
+	UserName   string             `json:"userName" bson:"user_name"`
 	Content    string             `json:"content" bson:"content"`
 	Likes      int                `json:"likes" bson:"likes"`
 	Audit      base.Audit         `json:"audit" bson:"audit"`
