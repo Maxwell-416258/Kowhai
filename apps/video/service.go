@@ -176,7 +176,47 @@ func GetVideos(c *gin.Context) {
 		"msg":  "获取成功",
 		"data": data,
 	})
+}
 
+// 获取用户上传的视频
+func GetVideosByUserId(c *gin.Context) {
+	var page, pageSize int
+	var total int64
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "25"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 25
+	}
+
+	id := c.Query("userId")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "userId 参数不能为空", "err": ""})
+		return
+	}
+	userId, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "userId必须为数字", "err": ""})
+		return
+	}
+
+	var videoList []Video
+	if err := global.DB.Where("user_id = ?", userId).Find(&videoList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "获取视频列表失败", "err": ""})
+		return
+	}
+
+	data := map[string]interface{}{
+		"videoList":  videoList,
+		"page":       page,
+		"pageSize":   pageSize,
+		"total":      total,
+		"totalPages": int(math.Ceil(float64(total) / float64(pageSize))),
+	}
+
+	c.JSON(http.StatusOK, gin.H{"msg": "获取成功", "data": data})
 }
 
 // 获取特定标签类型的视频
