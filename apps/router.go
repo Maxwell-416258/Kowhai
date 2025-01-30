@@ -44,6 +44,7 @@ func InitRouter() *gin.Engine {
 		v1.PATCH("video/like", video.AddLikes)
 		v1.GET("/video/search", video.GetVideoByName)
 		v1.GET("/video/getVideosByLabel", video.GetVideosByLabel)
+		v1.GET("/video/getVideosByUserId", video.GetVideosByUserId)
 	}
 
 	//comment

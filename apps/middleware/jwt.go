@@ -54,7 +54,7 @@ func CreateToken(name string) (string, error) {
 	claims := Claims{
 		Name: name,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(), //过期时间设置为3天
+			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(), //过期时间设置为1天
 		},
 	}
 	//生成token
