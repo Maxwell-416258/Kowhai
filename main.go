@@ -16,6 +16,6 @@ func main() {
 
 	global.Logger.Info("Server started at :8081")
 
-	r.Run(":8081")
+	r.Run("0.0.0.0:8081")
 
 }

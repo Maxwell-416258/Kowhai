@@ -16,12 +16,12 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Logger()) //启用logger中间件
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://http://119.45.154.194:9001", "http://localhost:3000"}, // 设置允许的源
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                    // 设置允许的请求方法
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},                    // 设置允许的请求头
-		ExposeHeaders:    []string{"Content-Length", "Content-Type"},                             // 设置可以暴露的响应头
-		AllowCredentials: true,                                                                   // 是否允许凭据
-		MaxAge:           12 * time.Hour,                                                         // 缓存预检请求的结果
+		AllowOrigins:     []string{"*"},                                       // 设置允许的源
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 设置允许的请求方法
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // 设置允许的请求头
+		ExposeHeaders:    []string{"Content-Length", "Content-Type"},          // 设置可以暴露的响应头
+		AllowCredentials: true,                                                // 是否允许凭据
+		MaxAge:           12 * time.Hour,                                      // 缓存预检请求的结果
 	}))
 	r.POST("/user/login", user.Login)
 	r.POST("/user/create", user.CreateUser)

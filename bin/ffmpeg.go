@@ -15,7 +15,7 @@ func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeRe
 	var cmd *exec.Cmd
 
 	// HLS 输出相关配置
-	hlsSegmentTime := "10" // 每个 HLS 片段的时长（秒）
+	hlsSegmentTime := "6" // 每个 HLS 片段的时长（秒）
 
 	tempDir := "/tmp"
 	// TS 和M3U8临时文件路径
