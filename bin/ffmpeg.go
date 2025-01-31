@@ -1,6 +1,7 @@
 package bin
 
 import (
+	"github.com/u2takey/ffmpeg-go"
 	"io"
 	"kowhai/apps/minio"
 	"kowhai/global"
@@ -10,78 +11,53 @@ import (
 	"strings"
 )
 
-func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeReader) error {
+func Start(ts, m3u8, minioPath string, hlsDir string, userId int, pr *io.PipeReader) error {
 	useGPU := hasNvidiaGPU()
-	var cmd *exec.Cmd
-
-	// HLS 输出相关配置
-	hlsSegmentTime := "6" // 每个 HLS 片段的时长（秒）
-
+	hlsSegmentTime := "6" // HLS 片段时长（秒）
 	tempDir := "/tmp"
-	// TS 和M3U8临时文件路径
 	tsFilePathPattern := filepath.Join(tempDir, ts)
 	m3u8FilePath := filepath.Join(tempDir, m3u8)
 
+	var ffmpegCmd *ffmpeg_go.Stream
+
 	if useGPU {
-		cmd = exec.Command(
-			"bin/ffmpeg",
-			"-y",
-			"-hwaccel", "cuda",
-			"-hwaccel_output_format", "cuda",
-			"-i", "pipe:0",
-			"-c:v", "h264_nvenc",
-			"-preset", "p4", // 更快的编码速度
-			"-coder", "0", // 关闭 CABAC
-			"-vsync", "0",
-			"-hls_time", hlsSegmentTime,
-			"-hls_playlist_type", "vod",
-			"-hls_segment_filename", tsFilePathPattern,
-			"-hls_base_url", minio_path,
-			m3u8FilePath,
-		)
-
+		ffmpegCmd = ffmpeg_go.Input("pipe:0",
+			ffmpeg_go.KwArgs{
+				"hwaccel":               "cuda",
+				"hwaccel_output_format": "cuda",
+			}).
+			Output(m3u8FilePath,
+				ffmpeg_go.KwArgs{
+					"c:v":                  "h264_nvenc", // 使用 GPU
+					"preset":               "p6",
+					"hls_time":             hlsSegmentTime,
+					"hls_playlist_type":    "vod",
+					"hls_segment_filename": tsFilePathPattern,
+					"hls_base_url":         minioPath,
+				})
 	} else {
-		cmd = exec.Command(
-			"bin/ffmpeg",
-			"-y",           // 覆盖输出文件
-			"-i", "pipe:0", // 输入文件
-			"-c:v", "libx264", // 使用 CPU 编码器
-			"-preset", "medium", // CPU 编码预设
-			"-hls_time", hlsSegmentTime, // 每个 HLS 片段的时长
-			"-hls_playlist_type", "vod",
-			"-hls_segment_filename", tsFilePathPattern, // ts 片段命名规则
-			"-hls_base_url", minio_path,
-			m3u8FilePath, // 输出 HLS 清单文件
-		)
+		ffmpegCmd = ffmpeg_go.Input("pipe:0").
+			Output(m3u8FilePath,
+				ffmpeg_go.KwArgs{
+					"c:v":                  "libx264", // 使用 CPU
+					"preset":               "medium",
+					"hls_time":             hlsSegmentTime,
+					"hls_playlist_type":    "vod",
+					"hls_segment_filename": tsFilePathPattern,
+					"hls_base_url":         minioPath,
+				})
 	}
 
-	cmd.Stdin = pr
+	ffmpegCmd = ffmpegCmd.WithInput(pr)
+	global.Logger.Info("Start ffmpeg command")
 
-	cmd.Stdout = os.Stdout
-
-	cmd.Stderr = os.Stderr
-	// 打印 FFmpeg 命令
-	global.Logger.Info("Start ffmpeg command", "cmd", cmd.String())
-
-	// 启动 FFmpeg 命令
-	if err := cmd.Start(); err != nil {
-		global.Logger.Error("Failed to start ffmpeg command", err)
+	if err := ffmpegCmd.Run(); err != nil {
+		global.Logger.Error("Failed to run ffmpeg", err)
 		return err
 	}
 
-	// 等待 FFmpeg 处理完成
-	if err := cmd.Wait(); err != nil {
-		global.Logger.Error("Failed to wait ffmpeg command", err)
-		return err
-	}
-
-	// 上传逻辑
-	tsPattern := strings.Replace(ts, "%03d", "*", 1) // 将 %03d 替换为 *，变成 faruxue_*.ts
-	pattern := filepath.Join(tempDir, tsPattern)     // 生成匹配模式
-
-	global.Logger.Info("Glob pattern", "pattern", pattern)
-
-	// 使用 glob 来查找所有匹配的文件
+	tsPattern := strings.Replace(ts, "%03d", "*", 1)
+	pattern := filepath.Join(tempDir, tsPattern)
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		global.Logger.Error("Failed to find TS files", err)
@@ -103,7 +79,6 @@ func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeRe
 		}
 	}
 
-	// 上传 M3U8 文件
 	go func() {
 		m3u8File, err := os.Open(m3u8FilePath)
 		if err != nil {
@@ -117,8 +92,8 @@ func Start(ts, m3u8, minio_path string, hlsDir string, userId int, pr *io.PipeRe
 			global.Logger.Error("Failed to upload M3U8 file", uploadErr)
 		}
 	}()
-	return nil
 
+	return nil
 }
 
 func hasNvidiaGPU() bool {
