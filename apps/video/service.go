@@ -281,7 +281,8 @@ func GetSumLikes(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "video_id 参数不能为空", "err": ""})
 		return
 	}
-	if err := global.DB.Model(&Video{}).Where("id = ?", video_id).Select("sumLike").Error; err != nil {
+	id, _ := strconv.Atoi(video_id)
+	if err := global.DB.Model(&Video{}).Where("id = ?", id).Select("sum_like").Find(&sum).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "点赞数查询失败", "err": ""})
 	}
 	c.JSON(http.StatusOK, gin.H{"msg": "获取成功", "data": sum})

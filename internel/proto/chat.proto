@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package chat;
+option go_package = "./pb";
+
+service ChatService {
+  // 发送消息
+  rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
+
+  // 监听实时消息
+  rpc ReceiveMessages (ListenMessagesRequest) returns (stream Message);
+
+  // 查询用户在线状态
+  rpc CheckOnlineStatus (CheckOnlineStatusRequest) returns (CheckOnlineStatusResponse);
+}
+
+
+// 发送消息请求
+message SendMessageRequest {
+  int64 sender_id = 1;
+  int64 receiver_id =2;
+  string message = 3;
+}
+
+// 发送消息响应
+message SendMessageResponse {
+  bool success = 1;
+}
+
+// 监听消息请求
+message ListenMessagesRequest {
+  int64 user_id =1;
+}
+
+// 消息结构
+message Message {
+  int64 sender_id = 1;
+  int64 receiver_id = 2;
+  string message = 3;
+  string timestamp = 4;
+}
+
+// 查询用户在线状态请求
+message CheckOnlineStatusRequest {
+  int64 user_id = 1;
+}
+
+// 查询用户在线状态响应
+message CheckOnlineStatusResponse {
+  bool is_online = 1;
+}

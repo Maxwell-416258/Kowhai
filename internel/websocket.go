@@ -1,0 +1,130 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"strconv"
+	"sync"
+
+	"github.com/gorilla/websocket"
+	"google.golang.org/grpc"
+	pb "kowhai/internel/pb"
+)
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+type WebSocketServer struct {
+	connections map[int64]*websocket.Conn
+	mu          sync.Mutex
+	grpcClient  pb.ChatServiceClient
+}
+
+type Message struct {
+	SenderID   int64  `json:"sender_id"`
+	ReceiverID int64  `json:"receiver_id"`
+	Message    string `json:"message"`
+}
+
+func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("WebSocket 连接失败:", err)
+		return
+	}
+	defer conn.Close()
+
+	userIDStr := r.URL.Query().Get("user_id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		log.Println("无效的 user_id:", userIDStr)
+		return
+	}
+
+	s.mu.Lock()
+	s.connections[userID] = conn
+	s.mu.Unlock()
+
+	log.Printf("用户 %d 连接 WebSocket", userID)
+
+	go s.receiveMessagesFromGrpc(userID)
+
+	for {
+		_, msg, err := conn.ReadMessage() //读取json数据
+		if err != nil {
+			log.Println("WebSocket 读取错误:", err)
+			break
+		}
+
+		var message Message
+		if err := json.Unmarshal(msg, &message); err != nil {
+			log.Println("JSON 解析失败:", err)
+			continue
+		}
+
+		s.sendMessageToGrpc(message)
+	}
+
+	s.mu.Lock()
+	delete(s.connections, userID)
+	s.mu.Unlock()
+}
+
+func (s *WebSocketServer) sendMessageToGrpc(msg Message) {
+	_, err := s.grpcClient.SendMessage(context.Background(), &pb.SendMessageRequest{
+		SenderId:   msg.SenderID,
+		ReceiverId: msg.ReceiverID,
+		Message:    msg.Message,
+	})
+	if err != nil {
+		log.Println("gRPC 发送消息失败:", err)
+	}
+}
+
+func (s *WebSocketServer) receiveMessagesFromGrpc(userID int64) {
+	stream, err := s.grpcClient.ReceiveMessages(context.Background(), &pb.ListenMessagesRequest{UserId: userID})
+	if err != nil {
+		log.Println("gRPC 监听消息失败:", err)
+		return
+	}
+
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			log.Println("gRPC 消息流断开:", err)
+			break
+		}
+
+		s.mu.Lock()
+		conn, exists := s.connections[msg.ReceiverId]
+		s.mu.Unlock()
+
+		if exists {
+			if err := conn.WriteJSON(msg); err != nil {
+				log.Println("WebSocket 发送消息失败:", err)
+			}
+		}
+	}
+}
+
+func main() {
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("无法连接 gRPC 服务器:", err)
+	}
+	defer conn.Close()
+
+	server := &WebSocketServer{
+		connections: make(map[int64]*websocket.Conn),
+		grpcClient:  pb.NewChatServiceClient(conn),
+	}
+
+	http.HandleFunc("/ws", server.handleConnection)
+	log.Println("WebSocket 服务器启动，监听 8082 端口")
+	http.ListenAndServe(":8082", nil)
+}
