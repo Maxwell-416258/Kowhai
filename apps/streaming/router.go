@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"kowhai/apps/streaming/chat"
 	"kowhai/apps/streaming/comment"
 	"kowhai/apps/streaming/middleware"
 	"kowhai/apps/streaming/user"
@@ -57,6 +58,11 @@ func InitRouter() *gin.Engine {
 	{
 		v1.GET("/subscribe", video.GetSubscribe)
 		v1.POST("/subscribe", video.CreateSubscribe)
+	}
+
+	//messge
+	{
+		v1.GET("/message", chat.GetHistoryMessages)
 	}
 
 	return r
