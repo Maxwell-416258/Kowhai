@@ -335,12 +335,12 @@ func GetSubscribe(c *gin.Context) {
 	}
 	var subscibeIds []int
 	for _, subscribe := range subscribes {
-		subscibeIds = append(subscibeIds, subscribe.Id)
+		subscibeIds = append(subscibeIds, subscribe.SubscribeId)
 	}
 
 	var userInfo []map[string]interface{}
 	//查询userName和Avatar
-	err = global.DB.Model(&user.User{}).Select("user_name,avatar").Where("id IN ?", subscibeIds).Find(&userInfo).Error
+	err = global.DB.Model(&user.User{}).Select("id,user_name,avatar").Where("id IN ?", subscibeIds).Find(&userInfo).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "用户名和头像获取失败", "err": ""})
 		global.Logger.Error("用户名和头像获取失败", err)
