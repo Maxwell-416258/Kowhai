@@ -27,6 +27,13 @@ func Start() {
 	// 初始化mongo
 	global.Mongo = database.InitMongo()
 
+	// 初始化postgres
+	var err error
+	global.DbPool, err = database.InitPostgres()
+	if err != nil {
+		global.Logger.Fatalf("Failed to connect to postgres: %v", err)
+	}
+
 	if MIGRATE {
 		migration.Migrate(global.DB)
 	}

@@ -12,10 +12,11 @@ var (
 )
 
 type Config struct {
-	MySql MySqlConfig `toml:"mysql"`
-	Mongo MongoConfig `toml:"mongo"`
-	Minio MinioConfig `toml:"minio"`
-	Log   LogConfig   `toml:"log"`
+	MySql    MySqlConfig    `toml:"mysql"`
+	Mongo    MongoConfig    `toml:"mongo"`
+	Minio    MinioConfig    `toml:"minio"`
+	Log      LogConfig      `toml:"log"`
+	Postgres PostgresConfig `toml:"postgres"`
 }
 
 type MySqlConfig struct {
@@ -47,6 +48,13 @@ type LogConfig struct {
 	MaxAge     int  `toml:"max_age"`
 	Compress   bool `toml:"compress"`
 	Develop    bool `toml:"develop"`
+}
+type PostgresConfig struct {
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	User     string `toml:"user"`
+	Password string `toml:"password"`
+	Database string `toml:"database"`
 }
 
 func InitConfig() *Config {
