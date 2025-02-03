@@ -2,7 +2,7 @@ package comment
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"kowhai/apps/base"
+	"kowhai/apps/streaming/base"
 )
 
 type Comment struct {

@@ -1,10 +1,10 @@
-package apps
+package streaming
 
 import (
-	"kowhai/apps/comment"
-	"kowhai/apps/middleware"
-	"kowhai/apps/user"
-	"kowhai/apps/video"
+	"kowhai/apps/streaming/comment"
+	"kowhai/apps/streaming/middleware"
+	"kowhai/apps/streaming/user"
+	"kowhai/apps/streaming/video"
 	"time"
 
 	"github.com/gin-contrib/cors"

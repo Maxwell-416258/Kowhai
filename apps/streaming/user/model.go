@@ -1,7 +1,7 @@
 package user
 
 import (
-	"kowhai/apps/base"
+	"kowhai/apps/streaming/base"
 	"time"
 )
 

@@ -1,7 +1,7 @@
 package video
 
 import (
-	"kowhai/apps/base"
+	"kowhai/apps/streaming/base"
 )
 
 type VideoType int

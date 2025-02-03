@@ -3,7 +3,7 @@ package bin
 import (
 	"github.com/u2takey/ffmpeg-go"
 	"io"
-	"kowhai/apps/minio"
+	"kowhai/apps/streaming/minio"
 	"kowhai/global"
 	"os"
 	"os/exec"

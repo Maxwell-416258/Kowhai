@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"kowhai/apps/minio"
+	"kowhai/apps/streaming/minio"
 	"kowhai/config"
 	"kowhai/database"
 	"kowhai/global"
