@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"io"
-	"kowhai/apps/minio"
-	"kowhai/apps/user"
+	minio2 "kowhai/apps/streaming/minio"
+	"kowhai/apps/streaming/user"
 	"kowhai/bin"
 	"kowhai/global"
 	"math"
@@ -95,7 +95,7 @@ func UploadVedio(c *gin.Context) {
 	hlsDir := fmt.Sprintf("%s", videoName)
 	m3u8 := fmt.Sprintf("%s.m3u8", videoName)
 	ts := fmt.Sprintf("%s_%%03d.ts", videoName)
-	minio_path := fmt.Sprintf("http://%s:%s/%s/%v/%s/", global.Config.Minio.Host, global.Config.Minio.Port, minio.VEDIO_BUCKET, userId, hlsDir)
+	minio_path := fmt.Sprintf("http://%s:%s/%s/%v/%s/", global.Config.Minio.Host, global.Config.Minio.Port, minio2.VEDIO_BUCKET, userId, hlsDir)
 
 	// 使用另一个 goroutine 启动 FFmpeg 命令并上传文件
 	wg.Add(1)
@@ -114,7 +114,7 @@ func UploadVedio(c *gin.Context) {
 
 	// 保存视频封面到minio
 	imageName := fmt.Sprintf("%s.jpg", videoName)
-	err = minio.UploadVideo(userId, hlsDir, imageName, image)
+	err = minio2.UploadVideo(userId, hlsDir, imageName, image)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频封面保存失败", "err": err})
 		return

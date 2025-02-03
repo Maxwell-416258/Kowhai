@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"
-	pb "kowhai/internel/pb"
+	pb "kowhai/api/pb"
 )
 
 var upgrader = websocket.Upgrader{
@@ -37,7 +37,7 @@ func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Reques
 		log.Println("WebSocket 连接失败:", err)
 		return
 	}
-	defer conn.Close()
+	defer conn.Close() // WebSocket 断开后，确保连接被关闭
 
 	userIDStr := r.URL.Query().Get("user_id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
@@ -52,10 +52,14 @@ func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Reques
 
 	log.Printf("用户 %d 连接 WebSocket", userID)
 
-	go s.receiveMessagesFromGrpc(userID)
+	// **增加一个 context 控制 gRPC 消息监听**
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // **WebSocket 断开时，自动取消 gRPC 监听**
+
+	go s.receiveMessagesFromGrpc(ctx, userID) // **传递 ctx 以便监听断开**
 
 	for {
-		_, msg, err := conn.ReadMessage() //读取json数据
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("WebSocket 读取错误:", err)
 			break
@@ -70,9 +74,12 @@ func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Reques
 		s.sendMessageToGrpc(message)
 	}
 
+	// **确保删除用户连接信息**
 	s.mu.Lock()
 	delete(s.connections, userID)
 	s.mu.Unlock()
+
+	log.Printf("用户 %d WebSocket 断开", userID)
 }
 
 func (s *WebSocketServer) sendMessageToGrpc(msg Message) {
@@ -86,27 +93,33 @@ func (s *WebSocketServer) sendMessageToGrpc(msg Message) {
 	}
 }
 
-func (s *WebSocketServer) receiveMessagesFromGrpc(userID int64) {
-	stream, err := s.grpcClient.ReceiveMessages(context.Background(), &pb.ListenMessagesRequest{UserId: userID})
+func (s *WebSocketServer) receiveMessagesFromGrpc(ctx context.Context, userID int64) {
+	stream, err := s.grpcClient.ReceiveMessages(ctx, &pb.ListenMessagesRequest{UserId: userID})
 	if err != nil {
 		log.Println("gRPC 监听消息失败:", err)
 		return
 	}
 
 	for {
-		msg, err := stream.Recv()
-		if err != nil {
-			log.Println("gRPC 消息流断开:", err)
-			break
-		}
+		select {
+		case <-ctx.Done(): // **监听 WebSocket 是否关闭**
+			log.Printf("检测到用户 %d WebSocket 断开，关闭 gRPC 消息监听", userID)
+			return
+		default:
+			msg, err := stream.Recv()
+			if err != nil {
+				log.Println("gRPC 消息流断开:", err)
+				return
+			}
 
-		s.mu.Lock()
-		conn, exists := s.connections[msg.ReceiverId]
-		s.mu.Unlock()
+			s.mu.Lock()
+			conn, exists := s.connections[msg.ReceiverId]
+			s.mu.Unlock()
 
-		if exists {
-			if err := conn.WriteJSON(msg); err != nil {
-				log.Println("WebSocket 发送消息失败:", err)
+			if exists {
+				if err := conn.WriteJSON(msg); err != nil {
+					log.Println("WebSocket 发送消息失败:", err)
+				}
 			}
 		}
 	}

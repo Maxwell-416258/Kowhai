@@ -2,8 +2,8 @@ package migration
 
 import (
 	"gorm.io/gorm"
-	"kowhai/apps/user"
-	"kowhai/apps/video"
+	"kowhai/apps/streaming/user"
+	"kowhai/apps/streaming/video"
 	"log"
 )
 

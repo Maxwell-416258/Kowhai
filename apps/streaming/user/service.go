@@ -2,8 +2,8 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
-	"kowhai/apps/middleware"
-	"kowhai/apps/minio"
+	"kowhai/apps/streaming/middleware"
+	"kowhai/apps/streaming/minio"
 	"kowhai/global"
 	"net/http"
 )
