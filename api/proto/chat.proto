@@ -36,7 +36,7 @@ message ListenMessagesRequest {
 message Message {
   int64 sender_id = 1;
   int64 receiver_id = 2;
-  string message = 3;
+  string content = 3;
   string timestamp = 4;
 }
 
