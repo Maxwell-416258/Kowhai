@@ -28,7 +28,7 @@ type WebSocketServer struct {
 type Message struct {
 	SenderID   int64  `json:"sender_id"`
 	ReceiverID int64  `json:"receiver_id"`
-	Message    string `json:"message"`
+	Content    string `json:"content"`
 }
 
 func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func (s *WebSocketServer) sendMessageToGrpc(msg Message) {
 	_, err := s.grpcClient.SendMessage(context.Background(), &pb.SendMessageRequest{
 		SenderId:   msg.SenderID,
 		ReceiverId: msg.ReceiverID,
-		Message:    msg.Message,
+		Message:    msg.Content,
 	})
 	if err != nil {
 		log.Println("gRPC 发送消息失败:", err)
