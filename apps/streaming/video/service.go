@@ -304,19 +304,48 @@ func AddLikes(c *gin.Context) {
 
 // 模糊搜索
 func GetVideoByName(c *gin.Context) {
+	type VideoWithUser struct {
+		Video
+		UserName string `json:"user_name"`
+		Avatar   string `json:"avatar"`
+	}
+
 	video_name := c.Query("name")
 	if video_name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "name 参数不能为空", "err": ""})
 		global.Logger.Error("name 参数不能为空")
 		return
 	}
-	var video_list *[]Video
-	if err := global.DB.Where("name like ?", "%"+video_name+"%").Order("create_time DESC").Find(&video_list).Error; err != nil {
+
+	var video_list []Video
+	if err := global.DB.Where("name LIKE ?", "%"+video_name+"%").Order("create_time DESC").Find(&video_list).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频搜索失败", "err": err})
 		global.Logger.Error("视频搜索失败")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"msg": "搜索成功", "data": video_list})
+
+	var videoWithUserList []VideoWithUser
+
+	// 遍历视频列表，查询每个视频对应的用户信息
+	for _, video := range video_list {
+		var user user.User
+		if err := global.DB.Where("id = ?", video.UserId).First(&user).Error; err != nil {
+			// 如果用户信息查询失败，可以设置为默认值
+			global.Logger.Error("用户信息查询失败: ", err)
+			continue
+		}
+
+		// 创建一个新的结构体，包含视频和用户信息
+		videoWithUser := VideoWithUser{
+			Video:    video,
+			UserName: user.UserName,
+			Avatar:   user.Avatar,
+		}
+
+		videoWithUserList = append(videoWithUserList, videoWithUser)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"msg": "搜索成功", "data": videoWithUserList})
 }
 
 // 查询用户订阅的用户名和头像
