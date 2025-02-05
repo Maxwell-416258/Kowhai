@@ -1,0 +1,18 @@
+@font-face {
+    font-family: 'PlaywriteAUSA';
+    src: url('./fonts/PlaywriteAUSA-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+}
+
+@font-face {
+    font-family: 'JosefinSans';
+    src: url('./fonts/JosefinSans-Regular.ttf') format('truetype');
+    font-weight: 100 900;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}
+body{
+    background-color: black;
+}
