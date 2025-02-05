@@ -7,7 +7,7 @@ import (
 	"io"
 	minio2 "kowhai/apps/streaming/minio"
 	"kowhai/apps/streaming/user"
-	"kowhai/bin"
+	"kowhai/ffmpeg"
 	"kowhai/global"
 	"math"
 	"net/http"
@@ -101,7 +101,7 @@ func UploadVedio(c *gin.Context) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := bin.Start(ts, m3u8, minio_path, hlsDir, userId, pr)
+		err := ffmpeg.Start(ts, m3u8, minio_path, hlsDir, userId, pr)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频处理失败", "err": err})
 			return
