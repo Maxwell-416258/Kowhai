@@ -3,7 +3,9 @@ package video
 import (
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 	"io"
 	minio2 "kowhai/apps/streaming/minio"
 	"kowhai/apps/streaming/user"
@@ -12,15 +14,11 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"sync"
-
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // 上传视频(包括处理视频)
-func UploadVedio(c *gin.Context) {
-	// 限制文件大小，避免上传过大的文件
+func UploadVideo(c *gin.Context) {
+	// 限制文件大小
 	const MaxUploadSize = 5000 << 20 // 1000MB
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxUploadSize)
 
@@ -31,21 +29,17 @@ func UploadVedio(c *gin.Context) {
 		return
 	}
 
-	// label
+	// 处理 label
 	labelStr := c.PostForm("label")
 	if labelStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "label字段不能为空", "err": ""})
 		return
 	}
-
-	// 将字符串转为整数
 	labelInt, err := strconv.Atoi(labelStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "label必须为数字", "err": ""})
 		return
 	}
-
-	// 转换为 VideoType 类型并验证
 	label := VideoType(labelInt)
 	if label < TypeMusic || label > TypeOther {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "label值不在有效范围内", "err": ""})
@@ -57,82 +51,71 @@ func UploadVedio(c *gin.Context) {
 	// 获取上传的视频文件
 	file, _, err := c.Request.FormFile("video")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"msg": "视频文件获取失败",
-			"err": err,
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "视频文件获取失败", "err": err.Error()})
 		return
 	}
+	defer file.Close()
+
 	// 获取上传的视频封面
 	image, _, err := c.Request.FormFile("image")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"msg": "视频封面获取失败",
-			"err": err,
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "视频封面获取失败", "err": err.Error()})
 		return
 	}
+	defer image.Close()
 
-	// 使用 WaitGroup 来等待所有异步操作完成
-	var wg sync.WaitGroup
-
-	// 创建管道
-	pr, pw := io.Pipe()
-
-	// 开启协程，将上传的数据写入管道
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer pw.Close()
-
-		_, err := io.Copy(pw, file)
-		if err != nil {
-			global.Logger.Error("Failed to copy file to pipe", err)
-		}
-	}()
-
-	// 视频存放的minio文件夹
-	hlsDir := fmt.Sprintf("%s", videoName)
+	// 生成存储路径
+	hlsDir := videoName
 	m3u8 := fmt.Sprintf("%s.m3u8", videoName)
 	ts := fmt.Sprintf("%s_%%03d.ts", videoName)
-	minio_path := fmt.Sprintf("http://%s:%s/%s/%v/%s/", global.Config.Minio.Host, global.Config.Minio.Port, minio2.VEDIO_BUCKET, userId, hlsDir)
+	minioPath := fmt.Sprintf("http://%s:%s/%s/%d/%s/", global.Config.Minio.Host, global.Config.Minio.Port, minio2.VEDIO_BUCKET, userId, hlsDir)
 
-	// 使用另一个 goroutine 启动 FFmpeg 命令并上传文件
-	wg.Add(1)
+	// **立即返回响应，不等待视频处理**
+	c.JSON(http.StatusOK, gin.H{"msg": "文件上传成功，正在处理中", "videoName": videoName})
+
+	// **创建 Pipe**
+	pr, pw := io.Pipe()
+
+	// **异步处理**
 	go func() {
-		defer wg.Done()
-		err := ffmpeg.Start(ts, m3u8, minio_path, hlsDir, userId, pr)
+		defer pw.Close()
+
+		// 将文件内容写入 PipeWriter
+		_, err := io.Copy(pw, file)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频处理失败", "err": err})
+			global.Logger.Error("文件复制失败", err)
 			return
 		}
 	}()
 
-	// 等待所有异步操作完成后关闭文件
-	wg.Wait()
-	file.Close()
+	// **异步启动 FFmpeg 处理**
+	go func() {
+		err := ffmpeg.Start(ts, m3u8, minioPath, hlsDir, userId, pr)
+		if err != nil {
+			global.Logger.Error("视频处理失败", err)
+			return
+		}
 
-	// 保存视频封面到minio
-	imageName := fmt.Sprintf("%s.jpg", videoName)
-	err = minio2.UploadVideo(userId, hlsDir, imageName, image)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频封面保存失败", "err": err})
-		return
-	}
+		// 上传封面到 MinIO
+		imageName := fmt.Sprintf("%s.jpg", videoName)
+		err = minio2.UploadVideo(userId, hlsDir, imageName, image)
+		if err != nil {
+			global.Logger.Error("视频封面保存失败", err)
+			return
+		}
 
-	// 保存视频封面链接到数据库
-	imageLink := fmt.Sprintf("%s%s", minio_path, imageName)
+		// 保存视频信息到数据库
+		imageLink := fmt.Sprintf("%s%s", minioPath, imageName)
+		videoLink := fmt.Sprintf("%s%s", minioPath, m3u8)
+		video := &Video{Name: videoName, UserId: userId, Link: videoLink, Image: imageLink, Label: label}
 
-	// 保存视频信息到数据库
-	videoLink := fmt.Sprintf("%s%s", minio_path, m3u8)
-	video := &Video{Name: videoName, UserId: userId, Link: videoLink, Image: imageLink, Label: label}
-	if err = global.DB.Save(video).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "视频信息保存到数据库失败", "err": err})
-		return
-	}
+		if err = global.DB.Save(video).Error; err != nil {
+			global.Logger.Error("视频信息保存到数据库失败", err)
+			return
+		}
 
-	c.JSON(http.StatusOK, gin.H{"msg": "video save successful!", "data": nil})
-	global.Logger.Info("video save successful!")
+		global.Logger.Info("视频处理完成，已成功保存到数据库")
+	}()
 }
 
 // 获取视频列表

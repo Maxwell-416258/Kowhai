@@ -39,7 +39,7 @@ func InitRouter() *gin.Engine {
 
 	//video
 	{
-		v1.POST("/video/upload", video.UploadVedio)
+		v1.POST("/video/upload", video.UploadVideo)
 		v1.GET("/videos", video.GetVideos)
 		v1.GET("/video/like", video.GetSumLikes)
 		v1.PATCH("video/like", video.AddLikes)
