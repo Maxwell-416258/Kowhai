@@ -9,6 +9,7 @@ import (
 	"io"
 	minio2 "kowhai/apps/streaming/minio"
 	"kowhai/apps/streaming/user"
+	"kowhai/apps/streaming/ws"
 	"kowhai/ffmpeg"
 	"kowhai/global"
 	"math"
@@ -76,7 +77,7 @@ func UploadVideo(c *gin.Context) {
 	// **创建 Pipe**
 	pr, pw := io.Pipe()
 
-	// **异步处理**
+	// **异步启动 FFmpeg 处理**
 	go func() {
 		defer pw.Close()
 
@@ -86,11 +87,8 @@ func UploadVideo(c *gin.Context) {
 			global.Logger.Error("文件复制失败", err)
 			return
 		}
-	}()
 
-	// **异步启动 FFmpeg 处理**
-	go func() {
-		err := ffmpeg.Start(ts, m3u8, minioPath, hlsDir, userId, pr)
+		err = ffmpeg.Start(ts, m3u8, minioPath, hlsDir, userId, pr)
 		if err != nil {
 			global.Logger.Error("视频处理失败", err)
 			return
@@ -115,6 +113,7 @@ func UploadVideo(c *gin.Context) {
 		}
 
 		global.Logger.Info("视频处理完成，已成功保存到数据库")
+		ws.BroadcastMessage(fmt.Sprintf(`{"videoName":"%s","status":"completed"}`, videoName))
 	}()
 }
 
