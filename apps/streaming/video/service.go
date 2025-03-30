@@ -13,11 +13,11 @@ import (
 	"kowhai/ffmpeg"
 	"kowhai/global"
 	"math"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 )
 
-// 上传视频(包括处理视频)
 func UploadVideo(c *gin.Context) {
 	// 限制文件大小
 	const MaxUploadSize = 5000 << 20 // 1000MB
@@ -49,17 +49,19 @@ func UploadVideo(c *gin.Context) {
 
 	userId, _ := strconv.Atoi(Id)
 
-	// 获取上传的视频文件
+	// 获取上传的视频文件，不使用 defer 立即关闭
 	file, _, err := c.Request.FormFile("video")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "视频文件获取失败", "err": err.Error()})
 		return
 	}
-	defer file.Close()
+	// 注意：此处不 defer file.Close()，将在异步协程中处理后关闭
 
 	// 获取上传的视频封面
 	image, _, err := c.Request.FormFile("image")
 	if err != nil {
+		// 如果视频文件已获取，出错时手动关闭
+		file.Close()
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "视频封面获取失败", "err": err.Error()})
 		return
 	}
@@ -71,24 +73,29 @@ func UploadVideo(c *gin.Context) {
 	ts := fmt.Sprintf("%s_%%03d.ts", videoName)
 	minioPath := fmt.Sprintf("http://%s:%s/%s/%d/%s/", global.Config.Minio.Host, global.Config.Minio.Port, minio2.VEDIO_BUCKET, userId, hlsDir)
 
-	// **立即返回响应，不等待视频处理**
+	// 立即返回响应
 	c.JSON(http.StatusOK, gin.H{"msg": "文件上传成功，正在处理中", "videoName": videoName})
 
-	// **创建 Pipe**
-	pr, pw := io.Pipe()
+	// 异步启动 FFmpeg 处理
+	go func(f multipart.File) {
+		// 保证处理结束后关闭视频文件
+		defer f.Close()
 
-	// **异步启动 FFmpeg 处理**
-	go func() {
-		defer pw.Close()
+		// 创建 Pipe，将文件数据写入 Pipe
+		pr, pw := io.Pipe()
+		// 异步写入文件数据到 PipeWriter
+		go func() {
+			_, err := io.Copy(pw, f)
+			if err != nil {
+				global.Logger.Error("文件复制失败", err)
+				pw.CloseWithError(err)
+				return
+			}
+			pw.Close()
+		}()
 
-		// 将文件内容写入 PipeWriter
-		_, err := io.Copy(pw, file)
-		if err != nil {
-			global.Logger.Error("文件复制失败", err)
-			return
-		}
-
-		err = ffmpeg.Start(ts, m3u8, minioPath, hlsDir, userId, pr)
+		// 处理视频
+		err := ffmpeg.Start(ts, m3u8, minioPath, hlsDir, userId, pr)
 		if err != nil {
 			global.Logger.Error("视频处理失败", err)
 			return
@@ -105,16 +112,23 @@ func UploadVideo(c *gin.Context) {
 		// 保存视频信息到数据库
 		imageLink := fmt.Sprintf("%s%s", minioPath, imageName)
 		videoLink := fmt.Sprintf("%s%s", minioPath, m3u8)
-		video := &Video{Name: videoName, UserId: userId, Link: videoLink, Image: imageLink, Label: label}
+		video := &Video{
+			Name:   videoName,
+			UserId: userId,
+			Link:   videoLink,
+			Image:  imageLink,
+			Label:  label,
+		}
 
 		if err = global.DB.Save(video).Error; err != nil {
 			global.Logger.Error("视频信息保存到数据库失败", err)
 			return
 		}
 
-		global.Logger.Info("视频处理完成，已成功保存到数据库")
+		// 通知前端视频处理完成
+		global.Logger.Info("视频处理完成...")
 		ws.BroadcastMessage(fmt.Sprintf(`{"videoName":"%s","status":"completed"}`, videoName))
-	}()
+	}(file)
 }
 
 // 获取视频列表

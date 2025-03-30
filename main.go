@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	gin.ForceConsoleColor()
 
 	cmd.Start()
 
