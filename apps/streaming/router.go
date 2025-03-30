@@ -6,6 +6,7 @@ import (
 	"kowhai/apps/streaming/middleware"
 	"kowhai/apps/streaming/user"
 	"kowhai/apps/streaming/video"
+	"kowhai/apps/streaming/ws"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -60,6 +61,10 @@ func InitRouter() *gin.Engine {
 		v1.POST("/subscribe", video.CreateSubscribe)
 	}
 
+	//ws
+	{
+		v1.GET("/ws", ws.HandleConnections)
+	}
 	//messge
 	{
 		v1.GET("/message", chat.GetHistoryMessages)
